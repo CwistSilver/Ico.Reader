@@ -1,4 +1,5 @@
 # Ico.Reader
+<img width="192" height="auto" src="icon.png">
 
 **'Ico.Reader'** is a cross-platform library specifically designed for extracting ICO icons from `.ico` files as well as embedded within `.exe` and `.dll` files.
 
