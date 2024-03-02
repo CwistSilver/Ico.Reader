@@ -1,5 +1,6 @@
 # Ico.Reader
 <img width="192" height="auto" src="icon.png">
+
 [![Ico.Reader](https://img.shields.io/nuget/vpre/Ico.Reader.svg?cacheSeconds=3600&label=Ico.Reader%20nuget)](https://www.nuget.org/packages/Ico.Reader)
 [![NuGet](https://img.shields.io/nuget/dt/Ico.Reader.svg?cacheSeconds=3600&label=Downloads)](https://www.nuget.org/packages/Ico.Reader)
 
