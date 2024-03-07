@@ -55,19 +55,22 @@ public class PngCreator : IPngCreator
 
     private static void WriteIdatChunks(BinaryWriter writer, ReadOnlySpan<byte> rgba, int width, int height)
     {
-        var bytesPerRow = width * 4;
-        var uncompressedData = new byte[height * (bytesPerRow + 1)];
+        var bytesPerRow = width * 4 + 1;
+        var uncompressedData = new byte[height * bytesPerRow];
 
         for (int y = 0; y < height; y++)
         {
-            var startIndex = y * (bytesPerRow + 1);
-            uncompressedData[startIndex] = 0;
-            rgba.Slice(y * bytesPerRow, bytesPerRow).CopyTo(uncompressedData.AsSpan(startIndex + 1));
+            uncompressedData[y * bytesPerRow] = 0;
+            rgba.Slice(y * width * 4, width * 4).CopyTo(uncompressedData.AsSpan(y * bytesPerRow + 1));
         }
 
         using var compressedDataStream = new MemoryStream();
-        using (var compressor = new DeflateStream(compressedDataStream, CompressionLevel.Optimal, true))
-            compressor.Write(uncompressedData, 0, uncompressedData.Length);
+        compressedDataStream.WriteByte(0x78);
+        compressedDataStream.WriteByte(0x9C);
+
+        using var compressor = new DeflateStream(compressedDataStream, CompressionLevel.Optimal, true);
+        compressor.Write(uncompressedData, 0, uncompressedData.Length);
+        compressor.Close();
 
         var compressedData = compressedDataStream.ToArray();
         WriteChunk(writer, IDAT, compressedData);
