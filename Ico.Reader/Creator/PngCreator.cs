@@ -80,12 +80,16 @@ public class PngCreator : IPngCreator
 
     private static void WriteChunk(BinaryWriter writer, string type, byte[] data)
     {
-        writer.WriteInt32BigEndian(data.Length);
         var typeArray = Encoding.ASCII.GetBytes(type);
+        writer.WriteInt32BigEndian(data.Length);
         writer.Write(typeArray);
         writer.Write(data);
 
-        var crc = CalculateCrc32(data);
+        var crcInput = new byte[typeArray.Length + data.Length];
+        typeArray.CopyTo(crcInput, 0);
+        data.CopyTo(crcInput, typeArray.Length);
+        var crc = CalculateCrc32(crcInput);
+
         writer.WriteUInt32BigEndian(crc);
     }
 
