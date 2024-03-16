@@ -83,7 +83,7 @@ public sealed class ImageReference
         ReadOnlySpan<byte> readOnlyData = data;
         imageReference.Format = icoDecoder.ReadFormat(readOnlyData);
 
-        if (imageReference.Width == 0 || imageReference.Height == 0)
+        if (imageReference.Width == 0 || imageReference.Height == 0 || imageReference.BitCount == 0)
         {
             var imageMetadata = icoDecoder.ReadImageMetadata(readOnlyData);
             if (imageMetadata is null)
@@ -91,6 +91,7 @@ public sealed class ImageReference
 
             imageReference.Width = imageMetadata.Width;
             imageReference.Height = imageMetadata.Height;
+            imageReference.BitCount = imageMetadata.BitCount;
         }
 
         return imageReference;
