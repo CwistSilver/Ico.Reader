@@ -14,5 +14,10 @@ public enum IcoOriginFileType
     /// <summary>
     /// The file is an ico file.
     /// </summary>
-    Ico
+    Ico,
+
+    /// <summary>
+    /// The file is a cursor file.
+    /// </summary>
+    Cursor
 }

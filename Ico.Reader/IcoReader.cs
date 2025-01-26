@@ -121,10 +121,15 @@ public sealed class IcoReader
         var decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Ico, IcoGroups = new IcoGroup[1] };
         decodedicoResult.IcoGroups[0] = new IcoGroup() { Name = "1", Header = IcoHeader.ReadFromStream(stream) };
 
-        if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0 || decodedicoResult.IcoGroups[0].Header!.ImageType != 1)
+        if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0)
         {
             stream.Dispose();
             return null;
+        }
+
+        if(decodedicoResult.IcoGroups[0].Header!.ImageType != 1)
+        {
+            decodedicoResult.OriginFileType = IcoOriginFileType.Cursor;
         }
 
         decodedicoResult.IcoGroups[0].DirectoryEntries = IcoDirectoryEntry.ReadEntriesFromStream(stream, decodedicoResult.IcoGroups[0].Header!);
