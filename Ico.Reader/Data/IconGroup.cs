@@ -34,14 +34,16 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
         get => DirectoryEntries;
         set
         {
-            if (value is IconDirectoryEntry[] entries)
+            var cursorDirectoryEntries = new IconDirectoryEntry[value.Length];
+
+            for (int i = 0; i < value.Length; i++)
             {
-                DirectoryEntries = entries;
+                if (value[i] is IconDirectoryEntry entry)
+                    cursorDirectoryEntries[i] = entry;
+                else
+                    throw new ArgumentException("Invalid entry type", nameof(value));
             }
-            else
-            {
-                throw new ArgumentException("Invalid entry type", nameof(value));
-            }
+            DirectoryEntries = cursorDirectoryEntries;
         }
     }
 

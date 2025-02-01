@@ -31,14 +31,16 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
         get => DirectoryEntries;
         set
         {
-            if (value is CursorDirectoryEntry[] entries)
+            var cursorDirectoryEntries = new CursorDirectoryEntry[value.Length];
+
+            for (int i = 0; i < value.Length; i++)
             {
-                DirectoryEntries = entries;
+                if (value[i] is CursorDirectoryEntry entry)
+                    cursorDirectoryEntries[i] = entry;
+                else
+                    throw new ArgumentException("Invalid entry type", nameof(value));
             }
-            else
-            {
-                throw new ArgumentException("Invalid entry type", nameof(value));
-            }
+            DirectoryEntries = cursorDirectoryEntries;
         }
     }
 
