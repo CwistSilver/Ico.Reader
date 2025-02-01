@@ -118,8 +118,13 @@ public sealed class IcoReader
 
     private IcoData? ReadFromIco(Stream stream, IIcoSource icoSource)
     {
-        var decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Ico, IcoGroups = new IcoGroup[1] };
-        decodedicoResult.IcoGroups[0] = new IcoGroup() { Name = "1", Header = IcoHeader.ReadFromStream(stream) };
+        var header = IcoHeader.ReadFromStream(stream);
+        var decodedicoResult = GetDecodedIcoResult(header);
+        if (decodedicoResult is null)
+        {
+            stream.Dispose();
+            return null;
+        }
 
         if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0)
         {
@@ -127,17 +132,16 @@ public sealed class IcoReader
             return null;
         }
 
-        if(decodedicoResult.IcoGroups[0].Header!.ImageType != 1)
-        {
-            decodedicoResult.OriginFileType = IcoOriginFileType.Cursor;
-        }
-
-        decodedicoResult.IcoGroups[0].DirectoryEntries = IcoDirectoryEntry.ReadEntriesFromStream(stream, decodedicoResult.IcoGroups[0].Header!);
-        decodedicoResult.References = new ImageReference[decodedicoResult.IcoGroups[0].DirectoryEntries!.Length];
+        decodedicoResult.IcoGroups[0].DirectoryEntries = IIcoDirectoryEntry.ReadEntriesFromStream(stream, decodedicoResult.IcoGroups[0].Header!);
+        decodedicoResult.References = new List<ImageReference>(decodedicoResult.IcoGroups[0].DirectoryEntries!.Length);
         for (var i = 0; i < decodedicoResult.IcoGroups[0].DirectoryEntries!.Length; i++)
         {
-            if (decodedicoResult.IcoGroups[0].DirectoryEntries![i].Reserved != 0)
-                return null;
+            if (header.ImageType == IconDirectoryEntry.ImageType)
+            {
+                var icoHeader = (IconDirectoryEntry)decodedicoResult.IcoGroups[0].DirectoryEntries![i];
+                if (icoHeader.Reserved != 0)
+                    return null;
+            }
 
             var imageReference = ImageReference.FromIcoDirectoryEntry(stream, decodedicoResult.IcoGroups[0].DirectoryEntries![i], _icoReaderConfiguration.IcoDecoder);
             if (imageReference is null)
@@ -148,5 +152,26 @@ public sealed class IcoReader
         }
 
         return new IcoData(_icoReaderConfiguration.IcoDecoder, icoSource, decodedicoResult);
+    }
+
+    private DecodedIcoResult? GetDecodedIcoResult(IcoHeader header)
+    {
+        DecodedIcoResult decodedicoResult;
+        if (header.ImageType == IconDirectoryEntry.ImageType)
+        {
+            decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Ico };
+            decodedicoResult.IcoGroups[0] = new IconGroup() { Name = "1", Header = header };
+        }
+        else if (header.ImageType == CursorDirectoryEntry.ImageType)
+        {
+            decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Cur };
+            decodedicoResult.IcoGroups[0] = new CursorGroup() { Name = "1", Header = header };
+        }
+        else
+        {
+            return null;
+        }
+
+        return decodedicoResult;
     }
 }

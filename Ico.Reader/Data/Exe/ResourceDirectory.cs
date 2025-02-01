@@ -109,7 +109,7 @@ internal class ResourceDirectory
             directory.Subdirectories.Add(subResourceDirectory);
         }
         else
-        {           
+        {
             var dataEntry = ResourceDataEntry.ReadFromStream(stream, rsrcSection.PointerToRawData, entry.DataEntryOffset);
             directory.DataEntries.Add(dataEntry);
         }

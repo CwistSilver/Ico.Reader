@@ -1,5 +1,5 @@
 ﻿using Ico.Reader.Data;
-using Ico.Reader.Utilities;
+using Ico.Reader.Extensions;
 using System.IO.Compression;
 using System.Text;
 
@@ -70,7 +70,12 @@ public class PngCreator : IPngCreator
 
         using var compressor = new DeflateStream(compressedDataStream, CompressionLevel.Optimal, true);
         compressor.Write(uncompressedData, 0, uncompressedData.Length);
+        compressor.Flush();
         compressor.Close();
+
+        uint adler = CalculateAdler32(uncompressedData);
+        using var binaryWriter = new BinaryWriter(compressedDataStream);
+        binaryWriter.WriteUInt32BigEndian(adler);
 
         var compressedData = compressedDataStream.ToArray();
         WriteChunk(writer, IDAT, compressedData);
@@ -100,5 +105,19 @@ public class PngCreator : IPngCreator
             crc = _crcTable[(crc ^ b) & 0xff] ^ crc >> 8;
 
         return crc ^ cInit;
+    }
+
+    private static uint CalculateAdler32(byte[] data)
+    {
+        const uint MOD_ADLER = 65521;
+        uint a = 1, b = 0;
+
+        foreach (var byteValue in data)
+        {
+            a = (a + byteValue) % MOD_ADLER;
+            b = (b + a) % MOD_ADLER;
+        }
+
+        return (b << 16) | a;
     }
 }

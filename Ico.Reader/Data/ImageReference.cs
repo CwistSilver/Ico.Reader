@@ -1,6 +1,7 @@
 ﻿using Ico.Reader.Decoder;
 
 namespace Ico.Reader.Data;
+
 /// <summary>
 /// Contains metadata about an individual image within an ico file.
 /// </summary>
@@ -41,6 +42,29 @@ public sealed class ImageReference
     /// </summary>
     public IcoImageFormat Format { get; internal set; }
 
+    /// <summary>
+    /// Specifies the type of the image, indicating whether it represents an icon (ICO) or a cursor (CUR).
+    /// </summary>
+    public IcoType IcoType { get; internal set; }
+
+    /// <summary>
+    /// The X-coordinate of the cursor's hotspot.
+    /// This defines the exact point within the cursor image that interacts with the user interface.
+    /// <para>
+    /// This property is only relevant for cursor (CUR) images.
+    /// </para>
+    /// </summary>
+    public ushort HotspotX { get; internal set; }
+
+    /// <summary>
+    /// The Y-coordinate of the cursor's hotspot.
+    /// This defines the exact point within the cursor image that interacts with the user interface.
+    /// <para>
+    /// This property is only relevant for cursor (CUR) images.
+    /// </para>
+    /// </summary>
+    public ushort HotspotY { get; internal set; }
+
     internal ImageReference() { }
 
     /// <summary>
@@ -65,7 +89,7 @@ public sealed class ImageReference
     /// <param name="icoDirectoryEntry">The directory entry representing the image within the stream.</param>
     /// <param name="icoDecoder">The decoder to use for reading the image format.</param>
     /// <returns>An ImageReference if the format is recognized; otherwise, null.</returns>
-    public static ImageReference? FromIcoDirectoryEntry(Stream stream, IcoDirectoryEntry icoDirectoryEntry, IIcoDecoder icoDecoder)
+    public static ImageReference? FromIcoDirectoryEntry(Stream stream, IIcoDirectoryEntry icoDirectoryEntry, IIcoDecoder icoDecoder)
     {
         var imageReference = new ImageReference
         {

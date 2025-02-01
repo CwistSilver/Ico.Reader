@@ -19,5 +19,5 @@ public enum IcoOriginFileType
     /// <summary>
     /// The file is a cursor file.
     /// </summary>
-    Cursor
+    Cur
 }

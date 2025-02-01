@@ -19,8 +19,8 @@ internal class ImageDataDirectory
     {
         foreach (var section in sectionHeaders)
         {
-            if (VirtualAddress >= section.VirtualAddress && VirtualAddress < section.VirtualAddress + section.SizeOfRawData)            
-                return section;            
+            if (VirtualAddress >= section.VirtualAddress && VirtualAddress < section.VirtualAddress + section.SizeOfRawData)
+                return section;
         }
 
         throw new Exception("VirtualAddress is outside the range of the section headers");

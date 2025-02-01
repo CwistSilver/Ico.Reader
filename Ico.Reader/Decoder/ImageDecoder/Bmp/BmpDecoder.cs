@@ -45,7 +45,6 @@ public sealed class BmpDecoder : IDecoder
         _decoders.Add(32, new IcoBmp32Decoder());
     }
 
-
     /// <summary>
     /// Decodes BMP image data into an ARGB pixel array based on the image's bit depth.
     /// </summary>
@@ -55,10 +54,10 @@ public sealed class BmpDecoder : IDecoder
     public byte[] Decode(ReadOnlySpan<byte> data)
     {
         var header = ReadInfoHeader(data);
-
         if (!_decoders.TryGetValue(header.BitCount, out var decoder))
             throw new NotSupportedException($"The bit count {header.BitCount} is not supported.");
 
+        if (header.Compression != 0) throw new NotSupportedException("Compressed BMP images are not supported yet.");
 
         var argbData = decoder.DecodeIcoBmpToRgba(data, header);
 

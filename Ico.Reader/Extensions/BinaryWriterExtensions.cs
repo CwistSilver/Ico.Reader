@@ -1,6 +1,6 @@
 ﻿using System.Buffers.Binary;
 
-namespace Ico.Reader.Utilities;
+namespace Ico.Reader.Extensions;
 internal static class BinaryWriterExtensions
 {
     internal static void WriteUInt32BigEndian(this BinaryWriter writer, uint value)
@@ -17,3 +17,4 @@ internal static class BinaryWriterExtensions
         writer.Write(span);
     }
 }
+
