@@ -163,12 +163,12 @@ public sealed class IcoReader
         if (header.ImageType == IconDirectoryEntry.ImageType)
         {
             decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Ico };
-            decodedicoResult.IcoGroups[0] = new IconGroup() { Name = "1", Header = header };
+            decodedicoResult.IcoGroups.Add(new IconGroup() { Name = "1", Header = header });
         }
         else if (header.ImageType == CursorDirectoryEntry.ImageType)
         {
             decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Cur };
-            decodedicoResult.IcoGroups[0] = new CursorGroup() { Name = "1", Header = header };
+            decodedicoResult.IcoGroups.Add(new CursorGroup() { Name = "1", Header = header });
         }
         else
         {
@@ -177,4 +177,5 @@ public sealed class IcoReader
 
         return decodedicoResult;
     }
+
 }

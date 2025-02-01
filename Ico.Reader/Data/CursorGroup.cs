@@ -29,7 +29,17 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries
     {
         get => DirectoryEntries;
-        set => throw new NotImplementedException();
+        set
+        {
+            if (value is CursorDirectoryEntry[] entries)
+            {
+                DirectoryEntries = entries;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid entry type", nameof(value));
+            }
+        }
     }
 
     /// <summary> <inheritdoc/> </summary>

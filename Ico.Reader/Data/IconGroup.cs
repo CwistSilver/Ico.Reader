@@ -32,7 +32,17 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries
     {
         get => DirectoryEntries;
-        set => throw new NotImplementedException();
+        set
+        {
+            if (value is IconDirectoryEntry[] entries)
+            {
+                DirectoryEntries = entries;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid entry type", nameof(value));
+            }
+        }
     }
 
     public override string ToString() => $"[{nameof(IconGroup)}] {Name} ({Size})";
