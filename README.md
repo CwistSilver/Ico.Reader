@@ -4,10 +4,11 @@
 [![Ico.Reader](https://img.shields.io/nuget/vpre/Ico.Reader.svg?cacheSeconds=3600&label=Ico.Reader%20nuget)](https://www.nuget.org/packages/Ico.Reader)
 [![NuGet](https://img.shields.io/nuget/dt/Ico.Reader.svg?cacheSeconds=3600&label=Downloads)](https://www.nuget.org/packages/Ico.Reader)
 
-**'Ico.Reader'** is a cross-platform library specifically designed for extracting ICO icons from `.ico` files as well as embedded within `.exe` and `.dll` files.
+**`Ico.Reader`** is a cross-platform library designed for extracting icons and cursors from `.ico` and `.cur` **files**, as well as from **embedded resources** within `.exe` **and** `.dll` files.
 
 ## Key Features
-- **Platform-Independent Design**: Operates independently of Windows-specific functions, enabling the extraction of ICO, EXE, and DLL images on any platform without reliance on platform-specific features.
+- **Platform-Independent Design**: Extracts images from ICO, CUR, EXE, and DLL files without relying on Windows-specific functions, making it fully cross-platform.
+- **Supports Both Icons and Cursors**: Reads both icons (.ico) and cursors (.cur) from standalone files and embedded resources within executables.
 - **Format Conversion**: Converts BMP images to PNG format during extraction, supporting a more universally compatible image format across different platforms.
 - **Efficient Memory Usage**: Implements a method to read icons that minimizes memory usage by delaying the loading of image data until it is needed.
 - **Flexible Data Access**: Supports extracting ico's from file paths, byte arrays, and streams, accommodating various application scenarios.
@@ -20,18 +21,30 @@
 var IcoReader = new IcoReader();
 
 // Reading from a file path (most memory-efficient)
-IcoData icoFromPath = IcoReader.Read("path/to/your/icon.ico");
+IcoData iconFromPath = IcoReader.Read("path/to/your/icon.ico");
+IcoData cursorFromPath = IcoReader.Read("path/to/your/cursor.cur");
+IcoData icoFromPathDll = IcoReader.Read("path/to/your/user32.dll");
+IcoData icoFromPathEXE = IcoReader.Read("path/to/your/regedit.exe");
 
 // Reading from a byte array
 byte[] icoBytes = File.ReadAllBytes("path/to/your/icon.ico");
 IcoData icoFromBytes = IcoReader.Read(icoBytes);
 
-// Reading from a stream
+// Reading from a stream (copies the stream for independent access)
 using var stream = File.OpenRead("path/to/your/icon.ico")
-IcoData icoFromStream = IcoReader.Read(stream);
-```
+IcoData icoFromStream = IcoReader.Read(stream: stream, copyStream: true);
 
-The method utilizing a file path is the most memory-efficient, as it allows the library to dynamically load image data from the filesystem only when needed. In contrast, when using byte arrays or streams, IcoReader stores all byte content in memory within the icoData instance to ensure image data can be accessed later.
+// Reading from a stream without copying (as efficient as direct file reading)
+using (var streamOrigin = File.OpenRead("path/to/your/icon.ico"))
+{
+    IcoData icoFromStreamDirect = IcoReader.Read(stream: streamOrigin, copyStream: false);
+    // ✅ This is as memory-efficient as reading directly from a file.
+    // 🔴 WARNING: All images must be accessed before closing the stream, 
+    // otherwise an error will occur.
+}
+```
+- `copyStream: true` → The stream is **copied**, allowing access to images even after the original stream is closed.
+- `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must remain open while accessing images.
 
 ### Retrieving Image from icoData
 
@@ -47,38 +60,72 @@ byte[] imageDataAsync = await icoData.GetImageAsync(0);
 ```
 
 #### Retrieving Images by Group
-Ico files, especially those embedded in executables (EXEs) or dynamic link libraries (DLLs), can organize images into groups. While ICO files naturally lack such groupings, **'Ico.Reader'** treats them as having a single default group to standardize the API across different ico sources.
+ICO files, especially those embedded in executables (EXEs) or dynamic link libraries (DLLs), can organize images into groups.
+`Ico.Reader` standardizes group handling by treating standalone ICO and CUR files as **single-group sources**, while DLLs and EXEs may contain **multiple groups** for icons and cursors.
 
-Retrieving images by group involves specifying both the group name and the image index within that group. The following example illustrates synchronous and asynchronous retrieval within the same context for convenience:
+Retrieving images by group involves specifying both the group object and the image index within that group.
+The following examples illustrate synchronous and asynchronous retrieval methods:
 
+##### Retrieving Images from Standalone ICO or CUR Files
+ICO and CUR files contain only one image group.
+To retrieve the first image in that group:
 ```cs
-// Synchronously retrieve image data by group and index
-byte[] groupImageData = icoData.GetImage("1", 0);
+// Get the first image in the group as PNG data
+var group = icoData.Groups[0];
+byte[] groupImageData = icoData.GetImage(group, 0);
+```
 
-// Asynchronously retrieve image data by group and index
-byte[] groupImageDataAsync = await icoData.GetImageAsync("1", 0);
+##### Retrieving Images from DLLs or EXEs
+DLLs and EXEs may contain multiple image groups for both icons and cursors.
+```cs
+// Retrieve a cursor group (e.g., ID 105) and get the first image
+var cursorGroup = icoData.GetGroup("105", IcoType.Cursor);
+byte[] cursorImageData = icoData.GetImage(cursorGroup, 0);
 
-// Iterating over all groups to retrieve all images asynchronously
+// Retrieve an icon group (e.g., ID 32656) and get the first image
+var iconGroup = icoData.GetGroup("32656", IcoType.Icon);
+byte[] iconImageData = icoData.GetImage(iconGroup, 0);
+```
+
+##### Retrieving All Images Asynchronously by Groups
+To iterate over all groups and retrieve all images asynchronously:
+```cs
 var imageDatas = new List<byte[]>();
 foreach (var group in icoData.Groups)
 {
     for (int i = 0; i < group.DirectoryEntries.Length; i++)
     {
-        byte[] imageData = await icoData.GetImageAsync(group.Name, i);
+        byte[] imageData = await icoData.GetImageAsync(group, i);
         imageDatas.Add(imageData);
     }
 }
 ```
 
+##### Retrieving All Images Asynchronously by image references
+To iterate over all image references and retrieve all images asynchronously:
+```cs
+var imageDatas = new List<byte[]>();
+foreach (var imageReference in icoData.ImageReferences)
+{
+    byte[] imageData = await icoData.GetImageAsync(imageReference);
+    imageDatas.Add(imageData);
+}
+```
+
+
 ### Selecting the Preferred Image Based on Quality
-To select the preferred image, **'Ico.Reader'** calculates a quality score for each image, taking into account its dimensions and bit depth. This calculation uses a specified weight for the bit depth to adjust its influence on the overall quality score. The preferred image is then determined by the highest quality score.
+To select the preferred image, `Ico.Reader` calculates a quality score for each image, taking into account its **dimensions and bit depth**.
+This calculation applies a **weight factor to the bit depth** to adjust its influence on the overall quality score.
+The preferred image is determined as the one with the **highest calculated quality score**.
+
+You can retrieve the preferred image either **globally** (from all groups) or **from a specific group**:
 
 ```cs
-// Selecting the preferred image globally
+// Selecting the preferred image globally from all groups
 int preferredIndex = icoData.PreferredImageIndex(colorBitWeight: 2f);
 
-// Selecting the preferred image within a specific group
-int preferredGroupIndex = icoData.PreferredImageIndex(groupName: "1", colorBitWeight: 2f);
+// Selecting the preferred image from a specific group
+int preferredGroupIndex = icoData.PreferredImageIndex(selectedGroup, colorBitWeight: 2f);
 ```
 
 ## Dependency Injection Support

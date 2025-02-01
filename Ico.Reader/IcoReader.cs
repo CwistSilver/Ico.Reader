@@ -63,14 +63,17 @@ public sealed class IcoReader
     /// Reads ico data from a stream.
     /// </summary>
     /// <param name="stream">The stream containing the ico data.</param>
+    /// <param name="copyStream">If true, a copy of the stream will be created; otherwise, the original stream will be used.</param>
     /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
     /// <exception cref="ArgumentNullException">Thrown if the provided stream is null.</exception>
-    public IcoData? Read(Stream stream)
+    public IcoData? Read(Stream stream, bool copyStream = true)
     {
-        if (stream is null)
-            throw new ArgumentNullException(nameof(stream));
+        IIcoSource icoSource;
+        if (copyStream)
+            icoSource = new StreamBufferSource(stream);
+        else
+            icoSource = new StreamSource(stream);
 
-        var icoSource = new StreamBufferSource(stream);
         var IcoData = ReadFromStream(stream, icoSource);
         if (IcoData is null)
             return null;

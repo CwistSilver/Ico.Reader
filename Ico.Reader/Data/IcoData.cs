@@ -262,7 +262,7 @@ public class IcoData
     /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>).</returns>
     public int PreferredImageIndex(string groupName, IcoType icoType, float colorBitWeight = 2f)
     {
-        var group = Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+        var group = GetGroup(groupName, icoType);
         return PreferredImageIndex(group, colorBitWeight);
     }
 
@@ -322,7 +322,7 @@ public class IcoData
     /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
     public Task SaveGroupToDirectory(string groupName, string path, IcoType icoType)
     {
-        var group = Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+        var group = GetGroup(groupName, icoType);
         return SaveGroupToDirectory(group, path);
     }
 
@@ -384,7 +384,7 @@ public class IcoData
     /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
     public ImageReference GetImageReference(string groupName, int imageIndex, IcoType icoType)
     {
-        var group = Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+        var group = GetGroup(groupName, icoType);
         return GetImageReference(group, imageIndex);
     }
 
@@ -421,7 +421,7 @@ public class IcoData
     /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
     public ReadOnlyCollection<ImageReference> GetImageReferences(string groupName, IcoType icoType)
     {
-        var group = Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+        var group = GetGroup(groupName, icoType);
         return GetImageReferences(group);
     }
 
@@ -439,6 +439,51 @@ public class IcoData
     }
 
     #endregion
+
+
+    /// <summary>
+    /// Retrieves the ICO groups with the specified name.
+    /// </summary>
+    /// <param name="groupName"> The name of the ICO group.</param>
+    /// <returns></returns>
+    public IEnumerable<IIcoGroup> GetGroups(string groupName)
+    {
+        return Groups.Where(x => x.Name == groupName);
+    }
+
+    /// <summary>
+    /// Retrieves the ICO group with the specified name.
+    /// </summary>
+    /// <param name="groupName"> The name of the ICO group.</param>
+    /// <param name="icoType"> The <see cref="IcoType"/> to specify the group type.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public IIcoGroup GetGroup(string groupName, IcoType icoType)
+    {
+        return Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+    }
+
+    /// <summary>
+    /// Retrieves the <see cref="IconGroup"/> with the specified name.
+    /// </summary>
+    /// <param name="groupName"> The name of the ICO group.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public IconGroup GetIconGroup(string groupName)
+    {
+        return IconGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+    }
+
+    /// <summary>
+    /// Retrieves the <see cref="CursorGroup"/> with the specified name.
+    /// </summary>
+    /// <param name="groupName"> The name of the ICO group.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public CursorGroup GetCursorGroup(string groupName)
+    {
+        return CursorGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
+    }
 
     public override string ToString() => $"{Name} Groups[{Groups.Count}] Images[{ImageReferences.Count}] ({OriginFileType})";
 

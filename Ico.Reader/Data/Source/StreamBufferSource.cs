@@ -9,6 +9,9 @@ internal sealed class StreamBufferSource : IIcoSource
     {
         if (sourceStream is null) throw new ArgumentNullException(nameof(sourceStream));
 
+        if (!sourceStream.CanRead)
+            throw new ArgumentException("The source stream must be readable.", nameof(sourceStream));
+
         var startPosition = sourceStream.Position;
 
         using var ms = new MemoryStream();
