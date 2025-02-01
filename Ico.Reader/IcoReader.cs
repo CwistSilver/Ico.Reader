@@ -151,7 +151,7 @@ public sealed class IcoReader
                 return null;
 
             imageReference.Id = i;
-            decodedicoResult.References[i] = imageReference;
+            decodedicoResult.References.Add(imageReference);
         }
 
         return new IcoData(_icoReaderConfiguration.IcoDecoder, icoSource, decodedicoResult);
