@@ -1,22 +1,26 @@
 ﻿using Ico.Reader.Data;
-using Ico.Reader.Data.Exe;
+using PeDecoder;
+using PeDecoder.Models;
 using System.Runtime.InteropServices;
 
 namespace Ico.Reader.Decoder;
 /// <inheritdoc cref="IIcoPeDecoder"/>
 public sealed class IcoPeDecoder : IIcoPeDecoder
 {
+    private readonly IPeDecoder _peDecoder;
+    public IcoPeDecoder(IPeDecoder peDecoder)
+    {
+        _peDecoder = peDecoder;
+    }
+
     public DecodedIcoResult? GetDecodedIcoResult(Stream stream, IIcoDecoder icoDecoder)
     {
-        var header = MZ_Header.ReadFromStream(stream);
-        if (header.Signature[0] != 'M' || header.Signature[1] != 'Z')
+        var header = _peDecoder.DecodeMZ(stream);
+        if (!_peDecoder.IsPeFormat(header))
             return null;
 
-        var peHeader = PE_Header.ReadFromStream(stream);
-        if (peHeader is null)
-            return null;
-
-        var readResourceDirectory = ResourceDirectory.ReadFromStream(stream, peHeader);
+        var peHeader = _peDecoder.DecodePE(stream);
+        var readResourceDirectory = _peDecoder.DecodeResourceDirectory(stream, peHeader);
         if (readResourceDirectory is null)
             return null;
 
@@ -166,12 +170,5 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
         }
     }
 
-    public bool IsPeFormat(Stream stream)
-    {
-        var header = MZ_Header.ReadFromStream(stream);
-        if (header.Signature[0] != 'M' || header.Signature[1] != 'Z')
-            return false;
-
-        return true;
-    }
+    public bool IsPeFormat(Stream stream) => _peDecoder.IsPeFormat(stream);
 }

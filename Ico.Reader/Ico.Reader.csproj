@@ -39,4 +39,8 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\PeDecoder\PeDecoder.csproj" />
+	</ItemGroup>
+
 </Project>

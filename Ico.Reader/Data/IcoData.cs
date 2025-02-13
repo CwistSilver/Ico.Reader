@@ -48,13 +48,13 @@ public class IcoData
     /// </summary>
     public ReadOnlyCollection<ImageReference> ImageReferences { get; }
 
-    private readonly IIcoSource _icoSource;
+    private readonly IDataSource _dataSource;
     private readonly IIcoDecoder _icoDecoder;
 
-    internal IcoData(IIcoDecoder icoDecoder, IIcoSource icoSource, DecodedIcoResult decodedIcoResult)
+    internal IcoData(IIcoDecoder icoDecoder, IDataSource dataSource, DecodedIcoResult decodedIcoResult)
     {
         _icoDecoder = icoDecoder;
-        _icoSource = icoSource;
+        _dataSource = dataSource;
         ImageReferences = Array.AsReadOnly(decodedIcoResult.References.ToArray());
         Groups = Array.AsReadOnly(decodedIcoResult.IcoGroups.ToArray());
         IconGroups = Array.AsReadOnly(decodedIcoResult.IcoGroups.Where(x => x.IcoType == IcoType.Icon).Cast<IconGroup>().ToArray());
@@ -70,7 +70,7 @@ public class IcoData
     /// <returns>A byte array containing the image data.</returns>
     public byte[] GetImage(ImageReference imageReference)
     {
-        using var stream = _icoSource.GetStream();
+        using var stream = _dataSource.GetStream();
         return imageReference.GetImageData(stream, _icoDecoder);
     }
 
@@ -156,7 +156,7 @@ public class IcoData
     /// </returns>
     public async Task<byte[]> GetImageAsync(ImageReference imageReference)
     {
-        using var stream = _icoSource.GetStream(true);
+        using var stream = _dataSource.GetStream(true);
         stream.Position = imageReference.Offset;
         var imageData = new byte[imageReference.Size];
         await stream.ReadAsync(imageData, 0, imageData.Length);

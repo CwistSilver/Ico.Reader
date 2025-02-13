@@ -1,6 +1,6 @@
-﻿namespace Ico.Reader.Data.Exe;
+﻿namespace PeDecoder.Models;
 [Flags]
-internal enum Characteristics : ushort
+public enum Characteristics : ushort
 {
     ImageFileRelocsStripped = 0x0001,
     ImageFileExecutableImage = 0x0002,

@@ -1,6 +1,6 @@
-﻿namespace Ico.Reader.Data.Exe;
+﻿namespace PeDecoder.Models;
 [Flags]
-internal enum SectionFlag : uint
+public enum SectionFlag : uint
 {
     /// <summary>
     /// Reserved for future use.

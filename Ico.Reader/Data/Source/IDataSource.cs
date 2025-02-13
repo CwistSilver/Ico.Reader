@@ -1,5 +1,5 @@
 ﻿namespace Ico.Reader.Data.IcoSources;
-internal interface IIcoSource
+public interface IDataSource
 {
     Stream GetStream(bool useAsync = false);
 }

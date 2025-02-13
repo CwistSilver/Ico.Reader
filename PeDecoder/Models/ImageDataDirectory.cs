@@ -1,12 +1,12 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
-internal class ImageDataDirectory
+namespace PeDecoder.Models;
+public class ImageDataDirectory
 {
-    internal uint VirtualAddress { get; set; }
-    internal uint Size { get; set; }
+    public uint VirtualAddress { get; set; }
+    public uint Size { get; set; }
 
-    internal static ImageDataDirectory ReadFromSpan(ReadOnlySpan<byte> optionalHeaderSpan, int offset)
+    public static ImageDataDirectory ReadFromSpan(ReadOnlySpan<byte> optionalHeaderSpan, int offset)
     {
         return new ImageDataDirectory()
         {
@@ -15,7 +15,7 @@ internal class ImageDataDirectory
         };
     }
 
-    internal SectionHeader FindFileSectionHeader(IEnumerable<SectionHeader> sectionHeaders)
+    public SectionHeader FindFileSectionHeader(IEnumerable<SectionHeader> sectionHeaders)
     {
         foreach (var section in sectionHeaders)
         {

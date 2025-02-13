@@ -1,6 +1,6 @@
-﻿namespace Ico.Reader.Data.Exe;
+﻿namespace PeDecoder.Models;
 // https://learn.microsoft.com/en-us/windows/win32/menurc/resource-types
-internal enum ResourceType : uint
+public enum ResourceType : uint
 {
     RT_CURSOR = 1,
     RT_BITMAP = 2,

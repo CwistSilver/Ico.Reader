@@ -1,60 +1,60 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
+namespace PeDecoder.Models;
 
-internal class OptionalHeader
+public class OptionalHeader
 {
     // https://learn.microsoft.com/de-de/windows/win32/debug/pe-format#optional-header-standard-fields-image-only
-    internal MagicNumber Magic { get; set; }
-    internal byte MajorLinkerVersion { get; set; }
-    internal byte MinorLinkerVersion { get; set; }
-    internal uint SizeOfCode { get; set; }
-    internal uint SizeOfInitializedData { get; set; }
-    internal uint SizeOfUninitializedData { get; set; }
-    internal uint AddressOfEntryPoint { get; set; }
-    internal uint BaseOfCode { get; set; }
-    internal uint BaseOfData { get; set; }
-    internal uint ImageBase { get; set; }
-    internal uint SectionAlignment { get; set; }
-    internal uint FileAlignment { get; set; }
-    internal ushort MajorOperatingSystemVersion { get; set; }
-    internal ushort MinorOperatingSystemVersion { get; set; }
-    internal ushort MajorImageVersion { get; set; }
-    internal ushort MinorImageVersion { get; set; }
-    internal ushort MajorSubsystemVersion { get; set; }
-    internal ushort MinorSubsystemVersion { get; set; }
-    internal uint Win32VersionValue { get; set; }
-    internal uint SizeOfImage { get; set; }
-    internal uint SizeOfHeaders { get; set; }
-    internal uint CheckSum { get; set; }
-    internal ushort Subsystem { get; set; }
-    internal ushort DllCharacteristics { get; set; }
-    internal uint SizeOfStackReserve { get; set; }
-    internal uint SizeOfStackCommit { get; set; }
-    internal uint SizeOfHeapReserve { get; set; }
-    internal uint SizeOfHeapCommit { get; set; }
-    internal uint LoaderFlags { get; set; }
-    internal uint NumberOfRvaAndSizes { get; set; }
+    public MagicNumber Magic { get; set; }
+    public byte MajorLinkerVersion { get; set; }
+    public byte MinorLinkerVersion { get; set; }
+    public uint SizeOfCode { get; set; }
+    public uint SizeOfInitializedData { get; set; }
+    public uint SizeOfUninitializedData { get; set; }
+    public uint AddressOfEntryPoint { get; set; }
+    public uint BaseOfCode { get; set; }
+    public uint BaseOfData { get; set; }
+    public uint ImageBase { get; set; }
+    public uint SectionAlignment { get; set; }
+    public uint FileAlignment { get; set; }
+    public ushort MajorOperatingSystemVersion { get; set; }
+    public ushort MinorOperatingSystemVersion { get; set; }
+    public ushort MajorImageVersion { get; set; }
+    public ushort MinorImageVersion { get; set; }
+    public ushort MajorSubsystemVersion { get; set; }
+    public ushort MinorSubsystemVersion { get; set; }
+    public uint Win32VersionValue { get; set; }
+    public uint SizeOfImage { get; set; }
+    public uint SizeOfHeaders { get; set; }
+    public uint CheckSum { get; set; }
+    public ushort Subsystem { get; set; }
+    public ushort DllCharacteristics { get; set; }
+    public uint SizeOfStackReserve { get; set; }
+    public uint SizeOfStackCommit { get; set; }
+    public uint SizeOfHeapReserve { get; set; }
+    public uint SizeOfHeapCommit { get; set; }
+    public uint LoaderFlags { get; set; }
+    public uint NumberOfRvaAndSizes { get; set; }
 
 
-    internal ImageDataDirectory? ExportTable { get; set; }
-    internal ImageDataDirectory? ImportTable { get; set; }
-    internal ImageDataDirectory? ResourceTable { get; set; }
-    internal ImageDataDirectory? ExceptionTable { get; set; }
-    internal ImageDataDirectory? CertificateTable { get; set; }
-    internal ImageDataDirectory? BaseRelocationTable { get; set; }
-    internal ImageDataDirectory? Debug { get; set; }
-    internal ImageDataDirectory? Architecture { get; set; }
-    internal ImageDataDirectory? GlobalPtr { get; set; }
-    internal ImageDataDirectory? TLSTable { get; set; }
-    internal ImageDataDirectory? LoadConfigTable { get; set; }
-    internal ImageDataDirectory? BoundImport { get; set; }
-    internal ImageDataDirectory? IAT { get; set; }
-    internal ImageDataDirectory? DelayImportDescriptor { get; set; }
-    internal ImageDataDirectory? CLRRuntimeHeader { get; set; }
-    internal ImageDataDirectory? Reserved { get; set; }
+    public ImageDataDirectory? ExportTable { get; set; }
+    public ImageDataDirectory? ImportTable { get; set; }
+    public ImageDataDirectory? ResourceTable { get; set; }
+    public ImageDataDirectory? ExceptionTable { get; set; }
+    public ImageDataDirectory? CertificateTable { get; set; }
+    public ImageDataDirectory? BaseRelocationTable { get; set; }
+    public ImageDataDirectory? Debug { get; set; }
+    public ImageDataDirectory? Architecture { get; set; }
+    public ImageDataDirectory? GlobalPtr { get; set; }
+    public ImageDataDirectory? TLSTable { get; set; }
+    public ImageDataDirectory? LoadConfigTable { get; set; }
+    public ImageDataDirectory? BoundImport { get; set; }
+    public ImageDataDirectory? IAT { get; set; }
+    public ImageDataDirectory? DelayImportDescriptor { get; set; }
+    public ImageDataDirectory? CLRRuntimeHeader { get; set; }
+    public ImageDataDirectory? Reserved { get; set; }
 
-    internal static OptionalHeader? ReadFromStream(Stream stream, PE_Header header)
+    public static OptionalHeader? ReadFromStream(Stream stream, PE_Header header)
     {
         if (header.SizeOfOptionalHeader == 0)
             return null;

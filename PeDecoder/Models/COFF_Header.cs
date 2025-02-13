@@ -1,35 +1,35 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
+namespace PeDecoder.Models;
 
 /// <summary>
 /// See <see href="https://learn.microsoft.com/de-de/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only">Optional Header Windows-Specific Fields (Image Only)</see>.
 /// </summary>
-internal class COFF_Header
+public class COFF_Header
 {
-    internal ulong ImageBase { get; set; }
-    internal uint SectionAlignment { get; set; }
-    internal uint FileAlignment { get; set; }
-    internal ushort MajorOperatingSystemVersion { get; set; }
-    internal ushort MinorOperatingSystemVersion { get; set; }
-    internal ushort MajorImageVersion { get; set; }
-    internal ushort MinorImageVersion { get; set; }
-    internal ushort MajorSubsystemVersion { get; set; }
-    internal ushort MinorSubsystemVersion { get; set; }
-    internal uint Win32VersionValue { get; set; }
-    internal uint SizeOfImage { get; set; }
-    internal uint SizeOfHeaders { get; set; }
-    internal uint CheckSum { get; set; }
-    internal ushort Subsystem { get; set; }
-    internal ushort DllCharacteristics { get; set; }
-    internal ulong SizeOfStackReserve { get; set; }
-    internal ulong SizeOfStackCommit { get; set; }
-    internal ulong SizeOfHeapReserve { get; set; }
-    internal ulong SizeOfHeapCommit { get; set; }
-    internal uint LoaderFlags { get; set; }
-    internal uint NumberOfRvaAndSizes { get; set; }
+    public ulong ImageBase { get; set; }
+    public uint SectionAlignment { get; set; }
+    public uint FileAlignment { get; set; }
+    public ushort MajorOperatingSystemVersion { get; set; }
+    public ushort MinorOperatingSystemVersion { get; set; }
+    public ushort MajorImageVersion { get; set; }
+    public ushort MinorImageVersion { get; set; }
+    public ushort MajorSubsystemVersion { get; set; }
+    public ushort MinorSubsystemVersion { get; set; }
+    public uint Win32VersionValue { get; set; }
+    public uint SizeOfImage { get; set; }
+    public uint SizeOfHeaders { get; set; }
+    public uint CheckSum { get; set; }
+    public ushort Subsystem { get; set; }
+    public ushort DllCharacteristics { get; set; }
+    public ulong SizeOfStackReserve { get; set; }
+    public ulong SizeOfStackCommit { get; set; }
+    public ulong SizeOfHeapReserve { get; set; }
+    public ulong SizeOfHeapCommit { get; set; }
+    public uint LoaderFlags { get; set; }
+    public uint NumberOfRvaAndSizes { get; set; }
 
-    internal static COFF_Header? ReadCOFF(Stream stream, PE_Header header)
+    public static COFF_Header? ReadCOFF(Stream stream, PE_Header header)
     {
         if (header.Optional is null || header.SizeOfOptionalHeader == 0)
             return null;

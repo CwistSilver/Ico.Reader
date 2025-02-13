@@ -1,21 +1,21 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
-internal class PE_Header
+namespace PeDecoder.Models;
+public class PE_Header
 {
-    internal const uint PeHeaderSize = 24;
+    public const uint PeHeaderSize = 24;
 
-    internal MachineType Machine { get; set; }
-    internal ushort NumberOfSections { get; set; }
-    internal DateTime TimeDateStamp { get; set; }
-    internal uint PointerToSymbolTable { get; set; }
-    internal uint NumberOfSymbols { get; set; }
-    internal ushort SizeOfOptionalHeader { get; set; }
-    internal Characteristics Characteristics { get; set; }
-    internal uint HeaderOffset { get; set; }
-    internal OptionalHeader? Optional { get; set; }
+    public MachineType Machine { get; set; }
+    public ushort NumberOfSections { get; set; }
+    public DateTime TimeDateStamp { get; set; }
+    public uint PointerToSymbolTable { get; set; }
+    public uint NumberOfSymbols { get; set; }
+    public ushort SizeOfOptionalHeader { get; set; }
+    public Characteristics Characteristics { get; set; }
+    public uint HeaderOffset { get; set; }
+    public OptionalHeader? Optional { get; set; }
 
-    internal static PE_Header? ReadFromStream(Stream stream)
+    public static PE_Header ReadFromStream(Stream stream)
     {
         var header = ReadHeader(stream);
         header.Optional = OptionalHeader.ReadFromStream(stream, header);

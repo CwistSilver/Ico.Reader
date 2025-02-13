@@ -68,13 +68,13 @@ public sealed class IcoReader
     /// <exception cref="ArgumentNullException">Thrown if the provided stream is null.</exception>
     public IcoData? Read(Stream stream, bool copyStream = true)
     {
-        IIcoSource icoSource;
+        IDataSource dataSource;
         if (copyStream)
-            icoSource = new StreamBufferSource(stream);
+            dataSource = new StreamBufferSource(stream);
         else
-            icoSource = new StreamSource(stream);
+            dataSource = new StreamSource(stream);
 
-        var IcoData = ReadFromStream(stream, icoSource);
+        var IcoData = ReadFromStream(stream, dataSource);
         if (IcoData is null)
             return null;
 
@@ -85,15 +85,15 @@ public sealed class IcoReader
     /// Reads ico data from a stream using a specified ico source.
     /// </summary>
     /// <param name="stream">The stream containing the ico data.</param>
-    /// <param name="icoSource">The ico source providing the stream.</param>
+    /// <param name="dataSource">The ico source providing the stream.</param>
     /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
-    private IcoData? ReadFromStream(Stream stream, IIcoSource icoSource)
+    private IcoData? ReadFromStream(Stream stream, IDataSource dataSource)
     {
         IcoData? IcoData;
         if (_icoReaderConfiguration.IcoExeDecoder.IsPeFormat(stream))
-            IcoData = ReadFromExe(stream, icoSource);
+            IcoData = ReadFromExe(stream, dataSource);
         else
-            IcoData = ReadFromIco(stream, icoSource);
+            IcoData = ReadFromIco(stream, dataSource);
 
         if (IcoData is null)
             return null;
@@ -105,9 +105,9 @@ public sealed class IcoReader
     /// Reads ico data from an executable file stream.
     /// </summary>
     /// <param name="stream">The stream representing the executable file.</param>
-    /// <param name="icoSource">The ico source providing the stream.</param>
+    /// <param name="dataSource">The ico source providing the stream.</param>
     /// <returns>An IcoData object if ico data is successfully read, otherwise null.</returns>
-    private IcoData? ReadFromExe(Stream stream, IIcoSource icoSource)
+    private IcoData? ReadFromExe(Stream stream, IDataSource dataSource)
     {
         if (!_icoReaderConfiguration.IcoExeDecoder.IsPeFormat(stream))
             return null;
@@ -116,10 +116,10 @@ public sealed class IcoReader
         if (decodedicoResult is null)
             return null;
 
-        return new IcoData(_icoReaderConfiguration.IcoDecoder, icoSource, decodedicoResult);
+        return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedicoResult);
     }
 
-    private IcoData? ReadFromIco(Stream stream, IIcoSource icoSource)
+    private IcoData? ReadFromIco(Stream stream, IDataSource dataSource)
     {
         var header = IcoHeader.ReadFromStream(stream);
         var decodedicoResult = GetDecodedIcoResult(header);
@@ -154,7 +154,7 @@ public sealed class IcoReader
             decodedicoResult.References.Add(imageReference);
         }
 
-        return new IcoData(_icoReaderConfiguration.IcoDecoder, icoSource, decodedicoResult);
+        return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedicoResult);
     }
 
     private DecodedIcoResult? GetDecodedIcoResult(IcoHeader header)

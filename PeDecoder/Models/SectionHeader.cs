@@ -1,26 +1,26 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Ico.Reader.Data.Exe;
+namespace PeDecoder.Models;
 // https://learn.microsoft.com/en-gb/windows/win32/debug/pe-format?redirectedfrom=MSDN#section-table-section-headers
-internal class SectionHeader
+public class SectionHeader
 {
-    internal const uint SectionSize = 40;
+    public const uint SectionSize = 40;
 
-    internal string Name { get; set; }
-    internal uint VirtualSize { get; set; }
-    internal uint VirtualAddress { get; set; }
-    internal uint SizeOfRawData { get; set; }
-    internal uint PointerToRawData { get; set; }
-    internal uint PointerToRelocations { get; set; }
-    internal uint PointerToLinenumbers { get; set; }
-    internal ushort NumberOfRelocations { get; set; }
-    internal ushort NumberOfLinenumbers { get; set; }
-    internal SectionFlag Characteristics { get; set; }
+    public string Name { get; set; }
+    public uint VirtualSize { get; set; }
+    public uint VirtualAddress { get; set; }
+    public uint SizeOfRawData { get; set; }
+    public uint PointerToRawData { get; set; }
+    public uint PointerToRelocations { get; set; }
+    public uint PointerToLinenumbers { get; set; }
+    public ushort NumberOfRelocations { get; set; }
+    public ushort NumberOfLinenumbers { get; set; }
+    public SectionFlag Characteristics { get; set; }
 
     public override string ToString() => $"{Name}";
 
-    internal static SectionHeader[] ReadFromStream(Stream stream, PE_Header peHeader)
+    public static SectionHeader[] ReadFromStream(Stream stream, PE_Header peHeader)
     {
         stream.Position = peHeader.SizeOfOptionalHeader + peHeader.HeaderOffset + PE_Header.PeHeaderSize;
 
@@ -56,7 +56,7 @@ internal class SectionHeader
         return sections;
     }
 
-    internal uint GetFileOffset(uint rva)
+    public uint GetFileOffset(uint rva)
     {
         if (rva < VirtualAddress || rva >= VirtualAddress + SizeOfRawData)
             throw new ArgumentOutOfRangeException(nameof(rva), "RVA is outside the range of the section");

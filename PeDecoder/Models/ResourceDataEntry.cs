@@ -1,15 +1,15 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
-internal class ResourceDataEntry
+namespace PeDecoder.Models;
+public class ResourceDataEntry
 {
-    internal uint ID { get; set; }
-    internal uint DataRVA { get; set; }
-    internal uint Size { get; set; }
-    internal uint Codepage { get; set; }
-    internal uint Reserved { get; set; }
+    public uint ID { get; set; }
+    public uint DataRVA { get; set; }
+    public uint Size { get; set; }
+    public uint Codepage { get; set; }
+    public uint Reserved { get; set; }
 
-    internal uint GetFileOffset(Stream stream, PE_Header peHeader)
+    public uint GetFileOffset(Stream stream, PE_Header peHeader)
     {
         var sectionHeades = SectionHeader.ReadFromStream(stream, peHeader);
         var rsrcSection = peHeader.Optional!.ResourceTable!.FindFileSectionHeader(sectionHeades);
@@ -17,7 +17,7 @@ internal class ResourceDataEntry
         return rsrcSection.GetFileOffset(DataRVA);
     }
 
-    internal static ResourceDataEntry ReadFromStream(Stream stream, long baseOffset, uint dataEntryOffset)
+    public static ResourceDataEntry ReadFromStream(Stream stream, long baseOffset, uint dataEntryOffset)
     {
         stream.Position = baseOffset + dataEntryOffset;
 

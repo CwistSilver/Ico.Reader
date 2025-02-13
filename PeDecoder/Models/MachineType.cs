@@ -1,5 +1,5 @@
-﻿namespace Ico.Reader.Data.Exe;
-internal enum MachineType : ushort
+﻿namespace PeDecoder.Models;
+public enum MachineType : ushort
 {
     IMAGE_FILE_MACHINE_UNKNOWN = 0x0,
     IMAGE_FILE_MACHINE_ALPHA = 0x184,

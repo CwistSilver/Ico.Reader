@@ -1,10 +1,10 @@
 ﻿using Ico.Reader.Data.IcoSources;
 
 namespace Ico.Reader.Data.Source;
-internal sealed class StreamSource : IIcoSource
+public sealed class StreamSource : IDataSource
 {
     private readonly Stream _sourceStream;
-    internal StreamSource(Stream sourceStream)
+    public StreamSource(Stream sourceStream)
     {
         if (sourceStream is null)
             throw new ArgumentNullException(nameof(sourceStream));

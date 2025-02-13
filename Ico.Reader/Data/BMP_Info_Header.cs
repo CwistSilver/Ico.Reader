@@ -60,10 +60,19 @@ public class BMP_Info_Header
     public int ClrImportant { get; set; }
 
     /// <summary>
-    /// Calculates the size of the color palette used by the bitmap.
+    /// Calculates the number of colors in the color palette used by the bitmap.
+    /// <para>
+    /// If ClrUsed is 0, returns the maximum number of colors based on BitCount.
+    /// </para>
     /// </summary>
-    /// <returns>The size of the color palette in bytes.</returns>
-    public int CalculatePaletteSize() => 1 << BitCount;
+    /// <returns>The number of colors in the color palette.</returns>
+    public int CalculatePaletteSize()
+    {
+        int maxColors = 1 << BitCount;
+        int paletteColors = (ClrUsed == 0 || ClrUsed > maxColors) ? maxColors : ClrUsed;
+        return paletteColors;
+    }
+
 
     /// <summary>
     /// Calculates the offset to the beginning of bitmap data, taking into account the size of the header and the color palette.

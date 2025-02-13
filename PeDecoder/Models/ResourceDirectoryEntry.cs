@@ -1,17 +1,17 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Ico.Reader.Data.Exe;
-internal class ResourceDirectoryEntry
+namespace PeDecoder.Models;
+public class ResourceDirectoryEntry
 {
-    internal const byte ResourceDirectoryEntrySize = 8;
+    public const byte ResourceDirectoryEntrySize = 8;
 
-    internal uint NameOffset { get; set; }
-    internal uint IntegerID { get; set; }
-    internal uint DataEntryOffset { get; set; }
-    internal uint SubdirectoryOffset { get; set; }
+    public uint NameOffset { get; set; }
+    public uint IntegerID { get; set; }
+    public uint DataEntryOffset { get; set; }
+    public uint SubdirectoryOffset { get; set; }
 
-    internal string DecodeName(Stream resourceStream, long streamOffset)
+    public string DecodeName(Stream resourceStream, long streamOffset)
     {
         resourceStream.Position = streamOffset + NameOffset;
 
@@ -25,7 +25,7 @@ internal class ResourceDirectoryEntry
         return Encoding.Unicode.GetString(nameBytes);
     }
 
-    internal static ResourceDirectoryEntry[] ReadFromStream(Stream stream, ResourceDirectory resourceDirectory, long resourceDirectoryOffset)
+    public static ResourceDirectoryEntry[] ReadFromStream(Stream stream, ResourceDirectory resourceDirectory, long resourceDirectoryOffset)
     {
         stream.Position = resourceDirectoryOffset + 16;
         var total = resourceDirectory.NumberOfNamedEntries + resourceDirectory.NumberOfIdEntries;

@@ -4,6 +4,7 @@ using Ico.Reader.Decoder;
 using Ico.Reader.Decoder.ImageDecoder;
 using Ico.Reader.Decoder.ImageDecoder.Bmp;
 using Microsoft.Extensions.DependencyInjection;
+using PeDecoder;
 
 namespace Ico.Reader;
 /// <summary>
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDecoder, BmpDecoder>();
         services.AddSingleton<IDecoder, PngDecoder>();
 
+        services.AddSingleton<IPeDecoder, PeDecoder.PeDecoder>();
         services.AddSingleton<IIcoDecoder, IcoDecoder>();
         services.AddSingleton<IIcoPeDecoder, IcoPeDecoder>();
 

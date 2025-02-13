@@ -1,11 +1,11 @@
 ﻿using Ico.Reader.Data.IcoSources;
 
 namespace Ico.Reader.Data.Source;
-internal sealed class StreamBufferSource : IIcoSource
+public sealed class StreamBufferSource : IDataSource
 {
     private readonly byte[] _buffer;
 
-    internal StreamBufferSource(Stream sourceStream)
+    public StreamBufferSource(Stream sourceStream)
     {
         if (sourceStream is null) throw new ArgumentNullException(nameof(sourceStream));
 

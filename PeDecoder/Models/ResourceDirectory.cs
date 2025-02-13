@@ -1,23 +1,23 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Ico.Reader.Data.Exe;
-internal class ResourceDirectory
+namespace PeDecoder.Models;
+public class ResourceDirectory
 {
-    internal string Name { get; set; } = string.Empty;
-    internal int Level { get; set; }
-    internal uint Characteristics { get; set; }
-    internal DateTime TimeDateStamp { get; set; }
-    internal ushort MajorVersion { get; set; }
-    internal ushort MinorVersion { get; set; }
-    internal ushort NumberOfNamedEntries { get; set; }
-    internal ushort NumberOfIdEntries { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Level { get; set; }
+    public uint Characteristics { get; set; }
+    public DateTime TimeDateStamp { get; set; }
+    public ushort MajorVersion { get; set; }
+    public ushort MinorVersion { get; set; }
+    public ushort NumberOfNamedEntries { get; set; }
+    public ushort NumberOfIdEntries { get; set; }
 
-    internal List<ResourceDirectory> Subdirectories { get; set; } = new List<ResourceDirectory>();
-    internal List<ResourceDataEntry> DataEntries { get; set; } = new List<ResourceDataEntry>();
+    public List<ResourceDirectory> Subdirectories { get; set; } = new List<ResourceDirectory>();
+    public List<ResourceDataEntry> DataEntries { get; set; } = new List<ResourceDataEntry>();
 
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
 
-    internal ResourceDirectory? GetDirectory(string directoryName)
+    public ResourceDirectory? GetDirectory(string directoryName)
     {
         if (Level != 1)
             return null;
@@ -29,7 +29,7 @@ internal class ResourceDirectory
         return foundDirectory;
     }
 
-    internal ResourceDataEntry[]? GetResources(string directoryName)
+    public ResourceDataEntry[]? GetResources(string directoryName)
     {
         if (Level != 1)
             return null;
@@ -45,7 +45,7 @@ internal class ResourceDirectory
         return dataEntries;
     }
 
-    internal static ResourceDirectory? ReadFromStream(Stream stream, PE_Header peHeader)
+    public static ResourceDirectory? ReadFromStream(Stream stream, PE_Header peHeader)
     {
         if (peHeader.Optional is null || peHeader.Optional.ResourceTable is null)
             return null;

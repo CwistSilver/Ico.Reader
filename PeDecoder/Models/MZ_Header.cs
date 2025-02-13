@@ -1,24 +1,24 @@
 ﻿using System.Buffers.Binary;
 
-namespace Ico.Reader.Data.Exe;
-internal struct MZ_Header
+namespace PeDecoder.Models;
+public struct MZ_Header
 {
-    internal char[] Signature;
-    internal ushort BytesInLastBlock;
-    internal ushort BlocksInFile;
-    internal ushort NumRelocs;
-    internal ushort HeaderParagraphs;
-    internal ushort MinExtraParagraphs;
-    internal ushort MaxExtraParagraphs;
-    internal ushort Ss;
-    internal ushort Sp;
-    internal ushort Checksum;
-    internal ushort Ip;
-    internal ushort Cs;
-    internal ushort RelocTableOffset;
-    internal ushort OverlayNumber;
+    public char[] Signature;
+    public ushort BytesInLastBlock;
+    public ushort BlocksInFile;
+    public ushort NumRelocs;
+    public ushort HeaderParagraphs;
+    public ushort MinExtraParagraphs;
+    public ushort MaxExtraParagraphs;
+    public ushort Ss;
+    public ushort Sp;
+    public ushort Checksum;
+    public ushort Ip;
+    public ushort Cs;
+    public ushort RelocTableOffset;
+    public ushort OverlayNumber;
 
-    internal static MZ_Header ReadFromStream(Stream stream)
+    public static MZ_Header ReadFromStream(Stream stream)
     {
         stream.Position = 0;
 
