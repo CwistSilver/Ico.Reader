@@ -23,6 +23,9 @@ jobs:
 
     - name: Set VERSION variable from tag
       run: echo "VERSION=1.0.0" >> $GITHUB_ENV
+
+    - name: Restore
+      run: dotnet restore Ico.Reader/Ico.Reader.csproj
     
     - name: Build
       run: dotnet build Ico.Reader/Ico.Reader.csproj --configuration Release --no-restore /p:Version=${VERSION}
