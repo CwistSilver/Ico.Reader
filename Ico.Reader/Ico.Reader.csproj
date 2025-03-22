@@ -46,7 +46,7 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<Target Name="IncludePeDecoderDll" AfterTargets="Build">
+	<Target Name="IncludePeDecoderDll" AfterTargets="Build;Publish" BeforeTargets="Pack">
 		<Copy
 		  SourceFiles="../PeDecoder/bin/$(Configuration)/netstandard2.1/PeDecoder.dll"
 		  DestinationFolder="$(OutputPath)"
