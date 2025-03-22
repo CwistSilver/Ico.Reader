@@ -30,8 +30,9 @@ jobs:
     - name: Build and Pack
       run: dotnet build Ico.Reader/Ico.Reader.csproj --configuration Release --no-restore /p:Version=${VERSION}
 
-    - name: Move NuGet package into current directory
-      run: mv Ico.Reader/Ico.Reader/bin/Release/*.nupkg .
+    - name: Move NuGet packages to current directory
+      run: |
+        find Ico.Reader/Ico.Reader/bin/Release -type f -name "*.nupkg" -exec mv {} . \;
     
     - name: Verify NuGet package contains PeDecoder.dll
       run: |
