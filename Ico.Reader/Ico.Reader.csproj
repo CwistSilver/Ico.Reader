@@ -48,14 +48,15 @@
 
 	<Target Name="IncludePeDecoderDll" AfterTargets="Build">
 		<Copy
-		  SourceFiles="..\PeDecoder\bin\$(Configuration)\netstandard2.1\PeDecoder.dll"
+		  SourceFiles="../PeDecoder/bin/$(Configuration)/netstandard2.1/PeDecoder.dll"
 		  DestinationFolder="$(OutputPath)"
-		  Condition="Exists('..\PeDecoder\bin\$(Configuration)\netstandard2.1\PeDecoder.dll')" />
+		  Condition="Exists('../PeDecoder/bin/$(Configuration)/netstandard2.1/PeDecoder.dll')" />
 		<ItemGroup>
-			<None Include="$(OutputPath)\PeDecoder.dll"
+			<None Include="$(OutputPath)/PeDecoder.dll"
 				  Pack="true"
-				  PackagePath="lib\netstandard2.1"
-				  Condition="Exists('$(OutputPath)\PeDecoder.dll')" />
+				  PackagePath="lib/netstandard2.1"
+				  Condition="Exists('$(OutputPath)/PeDecoder.dll')" />
 		</ItemGroup>
 	</Target>
+
 </Project>
