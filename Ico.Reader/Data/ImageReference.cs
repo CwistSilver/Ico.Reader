@@ -100,6 +100,12 @@ public sealed class ImageReference
             BitCount = icoDirectoryEntry.ColorDepth
         };
 
+        if (icoDirectoryEntry is CursorDirectoryEntry cursorDirectoryEntry)
+        {
+            imageReference.HotspotY = cursorDirectoryEntry.HotspotY;
+            imageReference.HotspotX = cursorDirectoryEntry.HotspotX;
+        }
+
         stream.Position = icoDirectoryEntry.ImageOffset;
         Span<byte> data = stackalloc byte[26];
         stream.Read(data);
