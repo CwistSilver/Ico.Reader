@@ -30,8 +30,9 @@ jobs:
     - name: Build and Pack
       run: dotnet build Ico.Reader/Ico.Reader.csproj --configuration Release --no-restore /p:Version=${VERSION}
 
-    - name: Move .nupkg
-      run: mv Ico.Reader/Ico.Reader/Ico.Reader/bin/Release/netstandard2.1/*.nupkg .
+    - name: Move NuGet package into current directory
+      run: mv Ico.Reader/Ico.Reader/Ico.Reader/bin/Release/*.nupkg .
+
 
 
     
