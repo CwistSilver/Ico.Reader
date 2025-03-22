@@ -9,19 +9,29 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4.1.1
+    
     - name: Verify commit exists in origin/main
       run: |
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
         git branch --remote --contains | grep origin/main
+    
     - name: Set VERSION variable from tag
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+    
     - name: Build
       run: dotnet build --configuration Release /p:Version=${VERSION}
+    
     - name: Pack
       run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Push
-      run: dotnet nuget push Ico.Reader.${VERSION}.nupkg --source https://nuget.pkg.github.com/CwistSilver/index.json --api-key ${GITHUB_TOKEN}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Push to nuget.org
-      run: dotnet nuget push Ico.Reader.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_API_KEY }}
+
+    - name: Verify NuGet package contains PeDecoder.dll
+      run: |
+        unzip -l Ico.Reader.${VERSION}.nupkg | grep 'lib/netstandard2.1/PeDecoder.dll' || (echo "PeDecoder.dll not found in package" && exit 1)
+    
+    # - name: Push
+    #   run: dotnet nuget push Ico.Reader.${VERSION}.nupkg --source https://nuget.pkg.github.com/CwistSilver/index.json --api-key ${GITHUB_TOKEN}
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    # - name: Push to nuget.org
+    #   run: dotnet nuget push Ico.Reader.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_API_KEY }}
