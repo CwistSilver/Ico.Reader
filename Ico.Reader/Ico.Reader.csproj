@@ -6,7 +6,6 @@
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<LangVersion>10</LangVersion>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>Ico.Reader</Title>
 		<PackageId>Ico.Reader</PackageId>
 		<Description>`Ico.Reader` is a cross-platform library designed for extracting icons and cursors from `.ico` and `.cur` files, as well as from embedded resources** within `.exe` and `.dll` files.</Description>
