@@ -29,12 +29,15 @@ jobs:
     
     - name: Pack
       run: dotnet pack Ico.Reader/Ico.Reader.csproj --configuration Release /p:Version=${VERSION} --output .
-
+    
     - name: Verify NuGet package contains PeDecoder.dll
       run: |
-        unzip -l ./output/Ico.Reader.${VERSION}.nupkg | grep 'lib/netstandard2.1/PeDecoder.dll' || (echo "❌ PeDecoder.dll not found in package" && exit 1)
+        echo "Paket-Inhalt (lib/netstandard2.1):"
+        unzip -l ./Ico.Reader.${VERSION}.nupkg | grep 'lib/netstandard2.1/'
+        echo "🔍 Prüfe auf PeDecoder.dll:"
+        unzip -l ./Ico.Reader.${VERSION}.nupkg | grep 'lib/netstandard2.1/PeDecoder.dll' || (echo "PeDecoder.dll not found in package" && exit 1)
 
-    
+  
     # - name: Push
     #   run: dotnet nuget push Ico.Reader.${VERSION}.nupkg --source https://nuget.pkg.github.com/CwistSilver/index.json --api-key ${GITHUB_TOKEN}
     #   env:
