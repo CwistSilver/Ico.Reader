@@ -28,7 +28,7 @@ jobs:
       run: dotnet restore Ico.Reader/Ico.Reader.csproj
     
     - name: Build and Pack
-      run: dotnet build Ico.Reader/Ico.Reader.csproj --configuration Release --no-restore /p:Version=${VERSION}
+      run: dotnet build Ico.Reader/Ico.Reader.csproj --configuration Release --no-restore /p:Version=${VERSION} --output .
     
     - name: Verify NuGet package contains PeDecoder.dll
       run: |
