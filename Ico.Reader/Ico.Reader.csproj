@@ -40,7 +40,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\PeDecoder\PeDecoder.csproj" />
+		<ProjectReference Include="..\PeDecoder\PeDecoder.csproj">
+			<PrivateAssets>All</PrivateAssets>
+			<IncludeAssets>None</IncludeAssets>
+		</ProjectReference>
 	</ItemGroup>
 
+	<Target Name="IncludePeDecoderDll" AfterTargets="Build">
+		<Copy
+		  SourceFiles="..\PeDecoder\bin\$(Configuration)\netstandard2.1\PeDecoder.dll"
+		  DestinationFolder="$(OutputPath)"
+		  Condition="Exists('..\PeDecoder\bin\$(Configuration)\netstandard2.1\PeDecoder.dll')" />
+		<ItemGroup>
+			<None Include="$(OutputPath)\PeDecoder.dll"
+				  Pack="true"
+				  PackagePath="lib\netstandard2.1"
+				  Condition="Exists('$(OutputPath)\PeDecoder.dll')" />
+		</ItemGroup>
+	</Target>
 </Project>
