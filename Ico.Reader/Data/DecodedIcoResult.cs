@@ -12,9 +12,9 @@ public sealed class DecodedIcoResult
     /// <summary>
     /// An array of image references, each pointing to an image extracted from the ico file.
     /// </summary>
-    public List<ImageReference> References { get; set; } = new List<ImageReference>();
+    public List<ImageReference> References { get; set; } = [];
     /// <summary>
     /// An array of ico groups, categorizing the extracted images into groups based on certain criteria, such as resolution or color depth.
     /// </summary>
-    public List<IIcoGroup> IcoGroups { get; set; } = new List<IIcoGroup>();
+    public List<IIcoGroup> IcoGroups { get; set; } = [];
 }

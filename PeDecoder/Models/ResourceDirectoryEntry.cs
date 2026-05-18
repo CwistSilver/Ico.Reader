@@ -2,6 +2,7 @@
 using System.Text;
 
 namespace PeDecoder.Models;
+
 public class ResourceDirectoryEntry
 {
     public const byte ResourceDirectoryEntrySize = 8;
@@ -17,7 +18,7 @@ public class ResourceDirectoryEntry
 
         Span<byte> lengthBytes = stackalloc byte[2];
         resourceStream.Read(lengthBytes);
-        ushort nameLength = MemoryMarshal.Read<ushort>(lengthBytes);
+        var nameLength = MemoryMarshal.Read<ushort>(lengthBytes);
 
         Span<byte> nameBytes = stackalloc byte[nameLength * 2];
         resourceStream.Read(nameBytes);
@@ -36,7 +37,7 @@ public class ResourceDirectoryEntry
 
         ReadOnlySpan<byte> readOnlyData = data;
 
-        for (int i = 0; i < total; i++)
+        for (var i = 0; i < total; i++)
         {
             var entrySpan = readOnlyData.Slice(ResourceDirectoryEntrySize * i, ResourceDirectoryEntrySize);
             entries[i] = new ResourceDirectoryEntry();
@@ -59,7 +60,7 @@ public class ResourceDirectoryEntry
     private static void AddSubdirectoryOrDataEntry(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)
     {
         var offset = MemoryMarshal.Read<uint>(entrySpan.Slice(4, 4));
-        bool isSubdirectoryOffset = (offset & 0x80000000) != 0;
+        var isSubdirectoryOffset = (offset & 0x80000000) != 0;
         if (isSubdirectoryOffset)
             entry.SubdirectoryOffset = offset & 0x7FFFFFFF;
         else

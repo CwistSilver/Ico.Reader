@@ -1,6 +1,7 @@
-﻿using Ico.Reader.Creator;
+﻿using System.Runtime.InteropServices;
+
+using Ico.Reader.Creator;
 using Ico.Reader.Data;
-using System.Runtime.InteropServices;
 
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
 /// <summary>
@@ -13,7 +14,7 @@ public sealed class BmpDecoder : IDecoder
     /// </summary>
     public IcoImageFormat SupportedFormat => IcoImageFormat.BMP;
 
-    private readonly Dictionary<int, IIcoBmpDecoder> _decoders = new();
+    private readonly Dictionary<int, IIcoBmpDecoder> _decoders = [];
     private readonly IPngCreator _pngCreator;
 
     /// <summary>
@@ -57,7 +58,8 @@ public sealed class BmpDecoder : IDecoder
         if (!_decoders.TryGetValue(header.BitCount, out var decoder))
             throw new NotSupportedException($"The bit count {header.BitCount} is not supported.");
 
-        if (header.Compression != 0) throw new NotSupportedException("Compressed BMP images are not supported yet.");
+        if (header.Compression != 0)
+            throw new NotSupportedException("Compressed BMP images are not supported yet.");
 
         var argbData = decoder.DecodeIcoBmpToRgba(data, header);
 

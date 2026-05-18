@@ -8,19 +8,24 @@ namespace Ico.Reader.Decoder;
 public sealed class IcoDecoder : IIcoDecoder
 {
     private readonly IDecoder[] _decoders;
-    public IcoDecoder(IEnumerable<IDecoder> decoders) => _decoders = decoders.ToArray();
+
+    public IcoDecoder(IEnumerable<IDecoder> decoders)
+    {
+        _decoders = [.. decoders];
+    }
+
     public IcoDecoder()
     {
-        _decoders = new IDecoder[]
-        {
+        _decoders =
+        [
             new BmpDecoder(),
             new PngDecoder()
-        };
+        ];
     }
 
     public byte[] GetImageData(ReadOnlySpan<byte> imageData, IcoImageFormat format)
     {
-        for (int i = 0; i < _decoders.Length; i++)
+        for (var i = 0; i < _decoders.Length; i++)
         {
             if (_decoders[i].SupportedFormat == format)
                 return _decoders[i].Decode(imageData);
@@ -31,7 +36,7 @@ public sealed class IcoDecoder : IIcoDecoder
 
     public ImageReference? ReadImageMetadata(ReadOnlySpan<byte> imageData)
     {
-        for (int i = 0; i < _decoders.Length; i++)
+        for (var i = 0; i < _decoders.Length; i++)
         {
             if (_decoders[i].IsSupported(imageData))
                 return _decoders[i].ReadImageMetadata(imageData);
@@ -42,7 +47,7 @@ public sealed class IcoDecoder : IIcoDecoder
 
     public IcoImageFormat ReadFormat(ReadOnlySpan<byte> imageData)
     {
-        for (int i = 0; i < _decoders.Length; i++)
+        for (var i = 0; i < _decoders.Length; i++)
         {
             if (_decoders[i].IsSupported(imageData))
                 return _decoders[i].SupportedFormat;

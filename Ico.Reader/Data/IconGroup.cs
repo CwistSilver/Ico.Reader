@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+using Ico.Reader.Utils;
+
 namespace Ico.Reader.Data;
 /// <summary>
 /// Represents a collection of <see cref="IconDirectoryEntry"/> within an ICO file.
@@ -36,7 +38,7 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
         {
             var cursorDirectoryEntries = new IconDirectoryEntry[value.Length];
 
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
             {
                 if (value[i] is IconDirectoryEntry entry)
                     cursorDirectoryEntries[i] = entry;
@@ -58,14 +60,14 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
 
         var positionStart = stream.Position;
 
-        int byteSize = 14 * icoHeader.ImageCount;
+        var byteSize = 14 * icoHeader.ImageCount;
         var entries = new IconDirectoryEntry[icoHeader.ImageCount];
 
         Span<byte> entriesBuffer = stackalloc byte[byteSize];
         stream.Read(entriesBuffer);
         ReadOnlySpan<byte> entriesBufferSpan = entriesBuffer;
 
-        for (int i = 0; i < icoHeader.ImageCount; i++)
+        for (var i = 0; i < icoHeader.ImageCount; i++)
         {
             var offset = i * 14;
             entries[i] = new IconDirectoryEntry
@@ -84,5 +86,6 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
         return entries;
     }
 
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader) => IIcoGroup.ReadFromEXEStream(stream, icoHeader);
+    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
+        => IcoGroupUtils.ReadFromEXEStream(stream, icoHeader);
 }

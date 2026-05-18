@@ -1,9 +1,11 @@
-﻿using Ico.Reader.Data;
-using Ico.Reader.Extensions;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
 
+using Ico.Reader.Data;
+using Ico.Reader.Extensions;
+
 namespace Ico.Reader.Creator;
+
 public class PngCreator : IPngCreator
 {
     private const uint cInit = 0xffffffff;
@@ -11,16 +13,15 @@ public class PngCreator : IPngCreator
     private const string IHDR = "IHDR";
     private const string IEND = "IEND";
 
-    private static readonly byte[] _header = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-    private static readonly uint[] _crcTable = Enumerable.Range(0, 256).Select(n =>
+    private static readonly byte[] _header = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    private static readonly uint[] _crcTable = [.. Enumerable.Range(0, 256).Select(n =>
     {
         var c = (uint)n;
         for (var k = 0; k < 8; k++)
-            c = (c & 1) == 1 ? 0xedb88320 ^ c >> 1 : c >> 1;
+            c = (c & 1) == 1 ? 0xedb88320 ^ (c >> 1) : c >> 1;
 
         return c;
-    }).ToArray();
-
+    })];
 
     public byte[] CreatePng(ReadOnlySpan<byte> rgba, BMP_Info_Header header)
     {
@@ -58,7 +59,7 @@ public class PngCreator : IPngCreator
         var bytesPerRow = width * 4 + 1;
         var uncompressedData = new byte[height * bytesPerRow];
 
-        for (int y = 0; y < height; y++)
+        for (var y = 0; y < height; y++)
         {
             uncompressedData[y * bytesPerRow] = 0;
             rgba.Slice(y * width * 4, width * 4).CopyTo(uncompressedData.AsSpan(y * bytesPerRow + 1));
@@ -73,7 +74,7 @@ public class PngCreator : IPngCreator
         compressor.Flush();
         compressor.Close();
 
-        uint adler = CalculateAdler32(uncompressedData);
+        var adler = CalculateAdler32(uncompressedData);
         using var binaryWriter = new BinaryWriter(compressedDataStream);
         binaryWriter.WriteUInt32BigEndian(adler);
 
@@ -100,9 +101,9 @@ public class PngCreator : IPngCreator
 
     public static uint CalculateCrc32(byte[] data)
     {
-        uint crc = cInit;
+        var crc = cInit;
         foreach (var b in data)
-            crc = _crcTable[(crc ^ b) & 0xff] ^ crc >> 8;
+            crc = _crcTable[(crc ^ b) & 0xff] ^ (crc >> 8);
 
         return crc ^ cInit;
     }

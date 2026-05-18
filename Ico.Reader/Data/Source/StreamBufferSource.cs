@@ -1,13 +1,13 @@
-﻿using Ico.Reader.Data.IcoSources;
+﻿namespace Ico.Reader.Data.Source;
 
-namespace Ico.Reader.Data.Source;
 public sealed class StreamBufferSource : IDataSource
 {
     private readonly byte[] _buffer;
 
     public StreamBufferSource(Stream sourceStream)
     {
-        if (sourceStream is null) throw new ArgumentNullException(nameof(sourceStream));
+        if (sourceStream is null)
+            throw new ArgumentNullException(nameof(sourceStream));
 
         if (!sourceStream.CanRead)
             throw new ArgumentException("The source stream must be readable.", nameof(sourceStream));

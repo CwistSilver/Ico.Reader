@@ -68,15 +68,14 @@ public class BMP_Info_Header
     /// <returns>The number of colors in the color palette.</returns>
     public int CalculatePaletteSize()
     {
-        int maxColors = 1 << BitCount;
-        int paletteColors = (ClrUsed == 0 || ClrUsed > maxColors) ? maxColors : ClrUsed;
+        var maxColors = 1 << BitCount;
+        var paletteColors = (ClrUsed == 0 || ClrUsed > maxColors) ? maxColors : ClrUsed;
         return paletteColors;
     }
-
 
     /// <summary>
     /// Calculates the offset to the beginning of bitmap data, taking into account the size of the header and the color palette.
     /// </summary>
     /// <returns>The offset to the bitmap data in bytes.</returns>
-    public int CalculateDataOffset() => Size + (1 << BitCount) * 4;
+    public int CalculateDataOffset() => Size + ((1 << BitCount) * 4);
 }

@@ -1,6 +1,5 @@
-﻿using Ico.Reader.Data.IcoSources;
+﻿namespace Ico.Reader.Data.Source;
 
-namespace Ico.Reader.Data.Source;
 public sealed class PathSource : IDataSource
 {
     private readonly string _originPath;
@@ -15,5 +14,5 @@ public sealed class PathSource : IDataSource
         _originPath = path;
     }
 
-    public Stream GetStream(bool useAsync = false) => new FileStream(_originPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0, useAsync);
+    public Stream GetStream(bool useAsync = false) => new FileStream(_originPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, useAsync);
 }

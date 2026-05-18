@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
+using Ico.Reader.Utils;
+
 namespace Ico.Reader.Data;
 /// <summary>
 /// Represents a collection of <see cref="CursorDirectoryEntry"/> within an CUR file.
@@ -33,7 +35,7 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
         {
             var cursorDirectoryEntries = new CursorDirectoryEntry[value.Length];
 
-            for (int i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length; i++)
             {
                 if (value[i] is CursorDirectoryEntry entry)
                     cursorDirectoryEntries[i] = entry;
@@ -49,27 +51,24 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
 
     public override string ToString() => $"[{nameof(CursorGroup)}] {Name} ({Size})";
 
-
     public CursorDirectoryEntry[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
     {
         if (icoHeader.ImageType != CursorDirectoryEntry.ImageType)
-        {
             throw new Exception("The ico data does not contain cursor data.");
-        }
 
         var positionStart = stream.Position;
 
-        int byteSize = 14 * icoHeader.ImageCount;
+        var byteSize = 14 * icoHeader.ImageCount;
         var entries = new CursorDirectoryEntry[icoHeader.ImageCount];
 
         Span<byte> entriesBuffer = stackalloc byte[byteSize];
         stream.Read(entriesBuffer);
         ReadOnlySpan<byte> entriesBufferSpan = entriesBuffer;
 
-        for (int i = 0; i < icoHeader.ImageCount; i++)
+        for (var i = 0; i < icoHeader.ImageCount; i++)
         {
             var offset = i * 14;
-            ushort resourceID = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2));
+            var resourceID = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2));
 
             entries[i] = new CursorDirectoryEntry()
             {
@@ -88,5 +87,6 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
         return entries;
     }
 
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader) => IIcoGroup.ReadFromEXEStream(stream, icoHeader);
+    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
+        => IcoGroupUtils.ReadFromEXEStream(stream, icoHeader);
 }

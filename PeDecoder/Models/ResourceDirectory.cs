@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 namespace PeDecoder.Models;
+
 public class ResourceDirectory
 {
     public string Name { get; set; } = string.Empty;
@@ -12,8 +13,8 @@ public class ResourceDirectory
     public ushort NumberOfNamedEntries { get; set; }
     public ushort NumberOfIdEntries { get; set; }
 
-    public List<ResourceDirectory> Subdirectories { get; set; } = new List<ResourceDirectory>();
-    public List<ResourceDataEntry> DataEntries { get; set; } = new List<ResourceDataEntry>();
+    public List<ResourceDirectory> Subdirectories { get; set; } = [];
+    public List<ResourceDataEntry> DataEntries { get; set; } = [];
 
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
 
@@ -68,10 +69,8 @@ public class ResourceDirectory
         var resourceDirectory = ReadResourceDirectoryBase(stream, virtualAddress, level);
         var resourceDirectoryEntries = ResourceDirectoryEntry.ReadFromStream(stream, resourceDirectory, virtualAddress);
 
-
         foreach (var entry in resourceDirectoryEntries)
             ProcessResourceDirectoryEntry(stream, resourceDirectory, entry, rsrcSection);
-
 
         return resourceDirectory;
     }
@@ -128,7 +127,7 @@ public class ResourceDirectory
         else
         {
             directory.Name = entry.IntegerID.ToString();
-            for (int i = 0; i < directory.DataEntries.Count; i++)
+            for (var i = 0; i < directory.DataEntries.Count; i++)
                 directory.DataEntries[i].ID = entry.IntegerID;
         }
 

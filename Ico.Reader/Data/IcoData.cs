@@ -1,8 +1,10 @@
-﻿using Ico.Reader.Data.IcoSources;
+﻿using System.Collections.ObjectModel;
+
+using Ico.Reader.Data.Source;
 using Ico.Reader.Decoder;
-using System.Collections.ObjectModel;
 
 namespace Ico.Reader.Data;
+
 public class IcoData
 {
     /// <summary>
@@ -235,10 +237,10 @@ public class IcoData
     /// <returns>The index of the image with the highest calculated quality.</returns>
     public int PreferredImageIndex(float colorBitWeight = 2f)
     {
-        int bestIndex = 0;
+        var bestIndex = 0;
         float bestQuality = 0;
 
-        for (int i = 0; i < ImageReferences.Count; i++)
+        for (var i = 0; i < ImageReferences.Count; i++)
         {
             var imageReference = ImageReferences[i];
             var qualityScore = imageReference.Width * imageReference.Height * (imageReference.BitCount * colorBitWeight);
@@ -274,14 +276,14 @@ public class IcoData
     /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>).</returns>
     public int PreferredImageIndex(IIcoGroup group, float colorBitWeight = 2f)
     {
-        int bestIndex = 0;
+        var bestIndex = 0;
         float bestQuality = 0;
 
         var imageReferences = new ImageReference[group.Size];
-        for (int i = 0; i < group.Size; i++)
+        for (var i = 0; i < group.Size; i++)
             imageReferences[i] = GetImageReference(group, i);
 
-        for (int i = 0; i < imageReferences.Length; i++)
+        for (var i = 0; i < imageReferences.Length; i++)
         {
             var imageReference = imageReferences[i];
             var qualityScore = imageReference.Width * imageReference.Height * (imageReference.BitCount * colorBitWeight);
@@ -339,7 +341,7 @@ public class IcoData
         Directory.CreateDirectory(groupPath);
         var imageReferences = GetImageReferences(group);
 
-        for (int i = 0; i < imageReferences.Count; i++)
+        for (var i = 0; i < imageReferences.Count; i++)
         {
             var imageReference = imageReferences[i];
             var filePath = GetImageFilePath(imageReference, groupPath);
@@ -361,7 +363,7 @@ public class IcoData
 
         var saveImageTasks = new List<Task>();
 
-        for (int i = 0; i < ImageReferences.Count; i++)
+        for (var i = 0; i < ImageReferences.Count; i++)
         {
             var imageReference = ImageReferences[i];
             var pathFile = GetImageFilePath(imageReference, rootPath);
@@ -440,16 +442,13 @@ public class IcoData
 
     #endregion
 
-
     /// <summary>
     /// Retrieves the ICO groups with the specified name.
     /// </summary>
     /// <param name="groupName"> The name of the ICO group.</param>
     /// <returns></returns>
     public IEnumerable<IIcoGroup> GetGroups(string groupName)
-    {
-        return Groups.Where(x => x.Name == groupName);
-    }
+        => Groups.Where(x => x.Name == groupName);
 
     /// <summary>
     /// Retrieves the ICO group with the specified name.
@@ -459,9 +458,7 @@ public class IcoData
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     public IIcoGroup GetGroup(string groupName, IcoType icoType)
-    {
-        return Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
-    }
+        => Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
 
     /// <summary>
     /// Retrieves the <see cref="IconGroup"/> with the specified name.
@@ -470,9 +467,7 @@ public class IcoData
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     public IconGroup GetIconGroup(string groupName)
-    {
-        return IconGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
-    }
+        => IconGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
 
     /// <summary>
     /// Retrieves the <see cref="CursorGroup"/> with the specified name.
@@ -481,9 +476,7 @@ public class IcoData
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     public CursorGroup GetCursorGroup(string groupName)
-    {
-        return CursorGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
-    }
+        => CursorGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
 
     public override string ToString() => $"{Name} Groups[{Groups.Count}] Images[{ImageReferences.Count}] ({OriginFileType})";
 

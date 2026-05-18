@@ -1,4 +1,5 @@
 ﻿namespace PeDecoder.Models;
+
 public enum MachineType : ushort
 {
     IMAGE_FILE_MACHINE_UNKNOWN = 0x0,

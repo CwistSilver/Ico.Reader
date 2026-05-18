@@ -1,6 +1,7 @@
 ﻿using PeDecoder.Models;
 
 namespace PeDecoder;
+
 public interface IPeDecoder
 {
     MZ_Header DecodeMZ(Stream stream);

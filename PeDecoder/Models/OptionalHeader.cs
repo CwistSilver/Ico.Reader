@@ -36,7 +36,6 @@ public class OptionalHeader
     public uint LoaderFlags { get; set; }
     public uint NumberOfRvaAndSizes { get; set; }
 
-
     public ImageDataDirectory? ExportTable { get; set; }
     public ImageDataDirectory? ImportTable { get; set; }
     public ImageDataDirectory? ResourceTable { get; set; }

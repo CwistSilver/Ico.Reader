@@ -1,6 +1,7 @@
 ﻿using System.Buffers.Binary;
 
 namespace PeDecoder.Models;
+
 public struct MZ_Header
 {
     public char[] Signature;

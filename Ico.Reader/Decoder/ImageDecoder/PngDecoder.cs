@@ -1,5 +1,6 @@
-﻿using Ico.Reader.Data;
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
+
+using Ico.Reader.Data;
 
 namespace Ico.Reader.Decoder.ImageDecoder;
 /// <summary>
@@ -8,7 +9,7 @@ namespace Ico.Reader.Decoder.ImageDecoder;
 /// </summary>
 public sealed class PngDecoder : IDecoder
 {
-    private static readonly byte[] _pngSignature = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+    private static readonly byte[] _pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
     /// <summary>
     /// Specifies that this decoder supports the PNG image format.

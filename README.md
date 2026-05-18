@@ -1,12 +1,20 @@
-# Ico.Reader
-<img width="192" height="auto" src="icon.png">
+# <img src="https://raw.githubusercontent.com/CwistSilver/Ico.Reader/main/Assets/icon.svg" height="26px" /> Ico.Reader
 
 [![Ico.Reader](https://img.shields.io/nuget/vpre/Ico.Reader.svg?cacheSeconds=3600&label=Ico.Reader%20nuget)](https://www.nuget.org/packages/Ico.Reader)
 [![NuGet](https://img.shields.io/nuget/dt/Ico.Reader.svg?cacheSeconds=3600&label=Downloads)](https://www.nuget.org/packages/Ico.Reader)
 
 **`Ico.Reader`** is a cross-platform library designed for extracting icons and cursors from `.ico` and `.cur` **files**, as well as from **embedded resources** within `.exe` **and** `.dll` files.
 
+## Installation
+
+```sh
+dotnet add package Ico.Reader
+```
+
+**Requirements**: .NET Standard 2.0 or later (compatible with .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+).
+
 ## Key Features
+
 - **Platform-Independent Design**: Extracts images from ICO, CUR, EXE, and DLL files without relying on Windows-specific functions, making it fully cross-platform.
 - **Supports Both Icons and Cursors**: Reads both icons (.ico) and cursors (.cur) from standalone files and embedded resources within executables.
 - **Format Conversion**: Converts BMP images to PNG format during extraction, supporting a more universally compatible image format across different platforms.
@@ -17,38 +25,43 @@
 ## Getting Started
 
 ### Reading icoData
+
 ```cs
-var IcoReader = new IcoReader();
+var icoReader = new IcoReader();
 
 // Reading from a file path (most memory-efficient)
-IcoData iconFromPath = IcoReader.Read("path/to/your/icon.ico");
-IcoData cursorFromPath = IcoReader.Read("path/to/your/cursor.cur");
-IcoData icoFromPathDll = IcoReader.Read("path/to/your/user32.dll");
-IcoData icoFromPathEXE = IcoReader.Read("path/to/your/regedit.exe");
+IcoData iconFromPath = icoReader.Read("path/to/your/icon.ico");
+IcoData cursorFromPath = icoReader.Read("path/to/your/cursor.cur");
+IcoData icoFromPathDll = icoReader.Read("path/to/your/user32.dll");
+IcoData icoFromPathEXE = icoReader.Read("path/to/your/regedit.exe");
 
 // Reading from a byte array
 byte[] icoBytes = File.ReadAllBytes("path/to/your/icon.ico");
-IcoData icoFromBytes = IcoReader.Read(icoBytes);
+IcoData icoFromBytes = icoReader.Read(icoBytes);
 
 // Reading from a stream (copies the stream for independent access)
-using var stream = File.OpenRead("path/to/your/icon.ico")
-IcoData icoFromStream = IcoReader.Read(stream: stream, copyStream: true);
+using var stream = File.OpenRead("path/to/your/icon.ico");
+IcoData icoFromStream = icoReader.Read(stream: stream, copyStream: true);
 
 // Reading from a stream without copying (as efficient as direct file reading)
 using (var streamOrigin = File.OpenRead("path/to/your/icon.ico"))
 {
-    IcoData icoFromStreamDirect = IcoReader.Read(stream: streamOrigin, copyStream: false);
+    IcoData icoFromStreamDirect = icoReader.Read(stream: streamOrigin, copyStream: false);
     // ✅ This is as memory-efficient as reading directly from a file.
     // 🔴 WARNING: All images must be accessed before closing the stream, 
     // otherwise an error will occur.
 }
 ```
+
 - `copyStream: true` → The stream is **copied**, allowing access to images even after the original stream is closed.
 - `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must remain open while accessing images.
+
+> **Note:** All `Read()` overloads return `null` if the file does not exist, the format is unrecognized or the data cannot be parsed.
 
 ### Retrieving Image from icoData
 
 #### Retrieving Images by Index
+
 Each image within an ico file is assigned a unique index, accessible through the ImageReferences collection within icoData. You can retrieve the image data by specifying this index.
 
 ```cs
@@ -60,6 +73,7 @@ byte[] imageDataAsync = await icoData.GetImageAsync(0);
 ```
 
 #### Retrieving Images by Group
+
 ICO files, especially those embedded in executables (EXEs) or dynamic link libraries (DLLs), can organize images into groups.
 `Ico.Reader` standardizes group handling by treating standalone ICO and CUR files as **single-group sources**, while DLLs and EXEs may contain **multiple groups** for icons and cursors.
 
@@ -67,6 +81,7 @@ Retrieving images by group involves specifying both the group object and the ima
 The following examples illustrate synchronous and asynchronous retrieval methods:
 
 ##### Retrieving Images from Standalone ICO or CUR Files
+
 ICO and CUR files contain only one image group.
 To retrieve the first image in that group:
 ```cs
@@ -76,6 +91,7 @@ byte[] groupImageData = icoData.GetImage(group, 0);
 ```
 
 ##### Retrieving Images from DLLs or EXEs
+
 DLLs and EXEs may contain multiple image groups for both icons and cursors.
 ```cs
 // Retrieve a cursor group (e.g., ID 105) and get the first image
@@ -88,6 +104,7 @@ byte[] iconImageData = icoData.GetImage(iconGroup, 0);
 ```
 
 ##### Retrieving All Images Asynchronously by Groups
+
 To iterate over all groups and retrieve all images asynchronously:
 ```cs
 var imageDatas = new List<byte[]>();
@@ -102,6 +119,7 @@ foreach (var group in icoData.Groups)
 ```
 
 ##### Retrieving All Images Asynchronously by image references
+
 To iterate over all image references and retrieve all images asynchronously:
 ```cs
 var imageDatas = new List<byte[]>();
@@ -112,8 +130,22 @@ foreach (var imageReference in icoData.ImageReferences)
 }
 ```
 
+#### ImageReference Properties
+
+Each `ImageReference` exposes metadata about the individual image:
+
+| Property   | Type             | Description                                |
+| ---------- | ---------------- | ------------------------------------------ |
+| `Width`    | `int`            | Image width in pixels                      |
+| `Height`   | `int`            | Image height in pixels                     |
+| `BitCount` | `int`            | Bit depth (e.g. 1, 4, 8, 24, 32)           |
+| `Format`   | `IcoImageFormat` | `BMP` or `PNG`                             |
+| `IcoType`  | `IcoType`        | `Icon` or `Cursor`                         |
+| `HotspotX` | `ushort`         | Cursor hotspot X coordinate (cursors only) |
+| `HotspotY` | `ushort`         | Cursor hotspot Y coordinate (cursors only) |
 
 ### Selecting the Preferred Image Based on Quality
+
 To select the preferred image, `Ico.Reader` calculates a quality score for each image, taking into account its **dimensions and bit depth**.
 This calculation applies a **weight factor to the bit depth** to adjust its influence on the overall quality score.
 The preferred image is determined as the one with the **highest calculated quality score**.
@@ -123,12 +155,59 @@ You can retrieve the preferred image either **globally** (from all groups) or **
 ```cs
 // Selecting the preferred image globally from all groups
 int preferredIndex = icoData.PreferredImageIndex(colorBitWeight: 2f);
+var imageRef = icoData.ImageReferences[preferredIndex];
+var imageData = icoData.GetImage(imageRef);
 
 // Selecting the preferred image from a specific group
 int preferredGroupIndex = icoData.PreferredImageIndex(selectedGroup, colorBitWeight: 2f);
+var imageRef = icoData.ImageReferences[preferredGroupIndex];
+var imageData = icoData.GetImage(imageRef);
 ```
 
+### Saving / Exporting Images
+
+`IcoData` provides convenience methods for saving decoded images directly to disk.
+
+```cs
+// Save a single image by its global index
+await icoData.SaveImageAsync(0, "output/image_0.png");
+
+// Save a single image from a specific group
+await icoData.SaveImageAsync(group, 0, "output/group_image.png");
+
+// Save all images in a group into a directory (one file per image)
+await icoData.SaveGroupToDirectory(group, "output/group/");
+
+// Save all groups into subdirectories of a root directory
+await icoData.SaveAllGroupsToDirectory("output/");
+
+// Save all images flat into a single directory
+await icoData.SaveAllImagesToDirectory("output/flat/");
+```
+
+## Configuration
+
+By default, `IcoReader` uses built-in decoders. You can supply a custom `IcoReaderConfiguration` to override the ICO or PE decoder:
+
+```cs
+var config = new IcoReaderConfiguration
+{
+    IcoDecoder = new MyCustomIcoDecoder(),
+    IcoExeDecoder = new MyCustomPeDecoder()
+};
+
+var icoReader = new IcoReader(config);
+```
+
+`IcoReaderConfiguration` properties:
+
+| Property        | Type            | Description                                             |
+| --------------- | --------------- | ------------------------------------------------------- |
+| `IcoDecoder`    | `IIcoDecoder`   | Decoder for standalone `.ico` / `.cur` files            |
+| `IcoExeDecoder` | `IIcoPeDecoder` | Decoder for embedded resources in `.exe` / `.dll` files |
+
 ## Dependency Injection Support
+
 For applications utilizing Dependency Injection, Ico.Reader provides an extension method to seamlessly register its services with the DI container. This enables easy configuration and integration into your projects, ensuring that all necessary components are available for ico reading and decoding tasks.
 
 To add Ico.Reader services to your project's service collection:
@@ -140,7 +219,9 @@ public void ConfigureServices(IServiceCollection services)
 ```
 
 ## Dependencies
-**'Ico.Reader'** is designed with minimal external dependencies to ensure lightweight integration into your projects. 
+
+**'Ico.Reader'** is designed with minimal external dependencies to ensure lightweight integration into your projects.
 
 For projects utilizing **'Ico.Reader'**, the primary dependency to be aware of is:
+
 - [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/)

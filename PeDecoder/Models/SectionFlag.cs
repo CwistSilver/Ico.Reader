@@ -1,4 +1,5 @@
 ﻿namespace PeDecoder.Models;
+
 [Flags]
 public enum SectionFlag : uint
 {

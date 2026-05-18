@@ -3,7 +3,9 @@ using Ico.Reader.Data;
 using Ico.Reader.Decoder;
 using Ico.Reader.Decoder.ImageDecoder;
 using Ico.Reader.Decoder.ImageDecoder.Bmp;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using PeDecoder;
 
 namespace Ico.Reader;

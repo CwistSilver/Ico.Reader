@@ -1,13 +1,16 @@
-﻿using Ico.Reader.Data;
+﻿using System.Runtime.InteropServices;
+
+using Ico.Reader.Data;
+
 using PeDecoder;
 using PeDecoder.Models;
-using System.Runtime.InteropServices;
 
 namespace Ico.Reader.Decoder;
 /// <inheritdoc cref="IIcoPeDecoder"/>
 public sealed class IcoPeDecoder : IIcoPeDecoder
 {
     private readonly IPeDecoder _peDecoder;
+
     public IcoPeDecoder(IPeDecoder peDecoder)
     {
         _peDecoder = peDecoder;
@@ -43,7 +46,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
 
         decodedIcoResult.References.Capacity = icoResource.Length;
 
-        for (int i = 0; i < icoResource.Length; i++)
+        for (var i = 0; i < icoResource.Length; i++)
         {
             var icoDataEntry = icoResource[i];
             var fileOffset = icoDataEntry.GetFileOffset(stream, peHeader);
@@ -63,7 +66,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
         if (icoResourceGroupDirectory is null)
             return;
 
-        for (int i = 0; i < icoResourceGroup.Length; i++)
+        for (var i = 0; i < icoResourceGroup.Length; i++)
         {
             var icoGroup = new IconGroup()
             {
@@ -76,7 +79,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
             stream.Position = fileOffset + 6;
             var directoryEntries = icoGroup.ReadEntriesFromEXEStream(stream, icoGroup.Header).ToList();
 
-            for (int x = 0; x < directoryEntries.Count; x++)
+            for (var x = 0; x < directoryEntries.Count; x++)
             {
                 var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == directoryEntries[x].ImageOffset);
                 if (reference is null)
@@ -101,7 +104,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
 
         decodedIcoResult.References.Capacity += curResource.Length;
 
-        for (int i = 0; i < curResource.Length; i++)
+        for (var i = 0; i < curResource.Length; i++)
         {
             var curDataEntry = curResource[i];
             var fileOffset = curDataEntry.GetFileOffset(stream, peHeader);
@@ -136,7 +139,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
 
         decodedIcoResult.IcoGroups.Capacity += curResourceGroup.Length;
 
-        for (int i = 0; i < curResourceGroup.Length; i++)
+        for (var i = 0; i < curResourceGroup.Length; i++)
         {
             var curGroup = new CursorGroup()
             {
@@ -148,7 +151,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
             stream.Position = fileOffset + 6;
             var directoryEntries = curGroup.ReadEntriesFromEXEStream(stream, curGroup.Header).ToList();
 
-            for (int x = 0; x < directoryEntries.Count; x++)
+            for (var x = 0; x < directoryEntries.Count; x++)
             {
                 var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == directoryEntries[x].ImageOffset);
                 if (reference is null)

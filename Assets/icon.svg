@@ -1,0 +1,7 @@
+<svg width="24px" height="24px" version="1.1" viewBox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <path d="m240-80c-22 0-40.833-7.8333-56.5-23.5s-23.5-34.5-23.5-56.5v-640c0-22 7.8333-40.833 23.5-56.5s34.5-23.5 56.5-23.5h320l240 240v480c0 22-7.8333 40.833-23.5 56.5s-34.5 23.5-56.5 23.5z" fill="#fff" stroke="#fff" stroke-width="48"/>
+  <path d="m240-80q-33 0-56.5-23.5t-23.5-56.5v-640q0-33 23.5-56.5t56.5-23.5h320l240 240v240h-80v-200h-200v-200h-280v640h360v80zm638 15-118-118v89h-80v-226h226v80h-90l118 118zm-638-95v-640z" stroke="#fff" stroke-linejoin="round" stroke-width="48" style="paint-order:stroke fill markers"/>
+  <text x="302.04337" y="-372.44812" fill="#000000" font-size="213.33px" stroke="#ffffff" stroke-linejoin="round" stroke-width="40" style="paint-order:stroke fill markers" xml:space="preserve"><tspan x="302.04337" y="-372.44812" font-family="'Segoe UI'" font-size="213.33px" font-weight="bold" stroke="#ffffff" stroke-width="40" style="paint-order:stroke fill markers">ICO</tspan></text>
+ </g>
+</svg>
