@@ -1,7 +1,8 @@
 # ![Ico.Reader icon](https://raw.githubusercontent.com/CwistSilver/Ico.Reader/main/Assets/icon-x64.png) Ico.Reader
 
-[![Ico.Reader](https://img.shields.io/nuget/vpre/Ico.Reader.svg?cacheSeconds=3600&label=Ico.Reader%20nuget)](https://www.nuget.org/packages/Ico.Reader)
-[![NuGet](https://img.shields.io/nuget/dt/Ico.Reader.svg?cacheSeconds=3600&label=Downloads)](https://www.nuget.org/packages/Ico.Reader)
+[![NuGet Version](https://img.shields.io/nuget/vpre/Ico.Reader)](https://www.nuget.org/packages/Ico.Reader)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Ico.Reader)](https://www.nuget.org/packages/Ico.Reader)
+
 
 **`Ico.Reader`** is a cross-platform library designed for extracting icons and cursors from `.ico` and `.cur` **files**, as well as from **embedded resources** within `.exe` **and** `.dll` files.
 
