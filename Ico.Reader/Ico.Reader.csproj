@@ -14,7 +14,7 @@
     <Title>Ico.Reader</Title>
     <Version>0.0.0</Version>
     <Authors>CwistSilver;Der_Floh</Authors>
-    <Description>Ico.Reader is a cross-platform library designed for extracting icons and cursors from .ico and .cur files, as well as from embedded resources** within .exe and .dll files.</Description>
+    <Description>Ico.Reader is a cross-platform library designed for extracting icons and cursors from .ico and .cur files, as well as from embedded resources within .exe and .dll files.</Description>
     <PackageProjectUrl>https://github.com/CwistSilver/Ico.Reader</PackageProjectUrl>
     <RepositoryUrl>https://github.com/CwistSilver/Ico.Reader</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

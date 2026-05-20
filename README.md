@@ -3,7 +3,6 @@
 [![NuGet Version](https://img.shields.io/nuget/vpre/Ico.Reader)](https://www.nuget.org/packages/Ico.Reader)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Ico.Reader)](https://www.nuget.org/packages/Ico.Reader)
 
-
 **`Ico.Reader`** is a cross-platform library designed for extracting icons and cursors from `.ico` and `.cur` **files**, as well as from **embedded resources** within `.exe` **and** `.dll` files.
 
 ## Installation
