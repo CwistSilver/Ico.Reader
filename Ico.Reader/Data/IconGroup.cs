@@ -1,5 +1,3 @@
-﻿using System.Runtime.InteropServices;
-
 using Ico.Reader.Utils;
 
 namespace Ico.Reader.Data;
@@ -54,36 +52,9 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
     public IconDirectoryEntry[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
     {
         if (icoHeader.ImageType != IconDirectoryEntry.ImageType)
-        {
-            throw new Exception("The ico data does not contain icon data.");
-        }
+            throw new ArgumentException("The ico data does not contain icon data.", nameof(icoHeader));
 
-        var positionStart = stream.Position;
-
-        var byteSize = 14 * icoHeader.ImageCount;
-        var entries = new IconDirectoryEntry[icoHeader.ImageCount];
-
-        Span<byte> entriesBuffer = stackalloc byte[byteSize];
-        stream.Read(entriesBuffer);
-        ReadOnlySpan<byte> entriesBufferSpan = entriesBuffer;
-
-        for (var i = 0; i < icoHeader.ImageCount; i++)
-        {
-            var offset = i * 14;
-            entries[i] = new IconDirectoryEntry
-            {
-                Width = entriesBufferSpan[offset],
-                Height = entriesBufferSpan[offset + 1],
-                ColorCount = entriesBufferSpan[offset + 2],
-                Reserved = entriesBufferSpan[offset + 3],
-                Planes = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 4, 2)),
-                ColorDepth = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 6, 2)),
-                ImageSize = MemoryMarshal.Read<uint>(entriesBufferSpan.Slice(offset + 8, 4)),
-                ImageOffset = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2))
-            };
-        }
-
-        return entries;
+        return DirectoryEntryReader.ReadEntries(stream, IcoGroupUtils.ExeEntrySize, icoHeader.ImageCount, IcoGroupUtils.ParseIconEntry);
     }
 
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)

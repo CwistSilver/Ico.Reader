@@ -60,22 +60,26 @@ public class BMP_Info_Header
     public int ClrImportant { get; set; }
 
     /// <summary>
-    /// Calculates the number of colors in the color palette used by the bitmap.
+    /// Calculates the number of colors in the color palette that precedes the bitmap data.
     /// <para>
-    /// If ClrUsed is 0, returns the maximum number of colors based on BitCount.
+    /// For indexed bitmaps (8 bits per pixel or fewer), <see cref="ClrUsed"/> gives the palette
+    /// length, and a value of 0 means the palette is full. Above 8 bits per pixel a palette is only
+    /// present when <see cref="ClrUsed"/> declares one.
     /// </para>
     /// </summary>
     /// <returns>The number of colors in the color palette.</returns>
     public int CalculatePaletteSize()
     {
+        if (BitCount > 8)
+            return Math.Max(ClrUsed, 0);
+
         var maxColors = 1 << BitCount;
-        var paletteColors = (ClrUsed == 0 || ClrUsed > maxColors) ? maxColors : ClrUsed;
-        return paletteColors;
+        return (ClrUsed <= 0 || ClrUsed > maxColors) ? maxColors : ClrUsed;
     }
 
     /// <summary>
     /// Calculates the offset to the beginning of bitmap data, taking into account the size of the header and the color palette.
     /// </summary>
     /// <returns>The offset to the bitmap data in bytes.</returns>
-    public int CalculateDataOffset() => Size + ((1 << BitCount) * 4);
+    public int CalculateDataOffset() => Size + (CalculatePaletteSize() * 4);
 }

@@ -230,20 +230,84 @@ public class IcoData
     #region PreferredImageIndexFunctions
 
     /// <summary>
-    /// Determines the index of the preferred image based on its quality, calculated using its dimensions and bit depth,
-    /// adjusted by a specified weight for the color bit depth.
+    /// Determines the index of the preferred image, scoring pixel area and color bit depth relative to the best
+    /// value present and combining them using the supplied weights.
     /// </summary>
-    /// <param name="colorBitWeight">The weight to apply to the bit depth in the quality calculation.</param>
-    /// <returns>The index of the image with the highest calculated quality.</returns>
-    public int PreferredImageIndex(float colorBitWeight = 2f)
-    {
-        var bestIndex = 0;
-        float bestQuality = 0;
+    /// <param name="colorBitWeight">The relative importance of the color bit depth.</param>
+    /// <param name="areaWeight">The relative importance of the pixel area.</param>
+    /// <returns>The index of the image with the highest calculated quality, or -1 if there are no images.</returns>
+    public int PreferredImageIndex(float colorBitWeight = 1f, float areaWeight = 2f)
+        => BestByQuality(ImageReferences, colorBitWeight, areaWeight);
 
-        for (var i = 0; i < ImageReferences.Count; i++)
+    /// <summary>
+    /// Determines the index of the preferred image for a given group based on its quality.
+    /// </summary>
+    /// <param name="groupName">The name of the ICO group.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
+    /// <param name="colorBitWeight">The relative importance of the color bit depth.</param>
+    /// <param name="areaWeight">The relative importance of the pixel area.</param>
+    /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>), or -1 if the group is empty.</returns>
+    public int PreferredImageIndex(string groupName, IcoType icoType, float colorBitWeight = 1f, float areaWeight = 2f)
+    {
+        var group = GetGroup(groupName, icoType);
+        return PreferredImageIndex(group, colorBitWeight, areaWeight);
+    }
+
+    /// <summary>
+    /// Determines the index of the preferred image within a specified ICO group based on its quality.
+    /// </summary>
+    /// <param name="group">The ICO group containing the images.</param>
+    /// <param name="colorBitWeight">The relative importance of the color bit depth.</param>
+    /// <param name="areaWeight">The relative importance of the pixel area.</param>
+    /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>), or -1 if the group is empty.</returns>
+    public int PreferredImageIndex(IIcoGroup group, float colorBitWeight = 1f, float areaWeight = 2f)
+    {
+        var imageReferences = new ImageReference[group.Size];
+        for (var i = 0; i < group.Size; i++)
+            imageReferences[i] = GetImageReference(group, i);
+
+        var bestIndex = BestByQuality(imageReferences, colorBitWeight, areaWeight);
+        return bestIndex < 0 ? -1 : ImageReferences.IndexOf(imageReferences[bestIndex]);
+    }
+
+    /// <summary>
+    /// Scores each image as a weighted sum of its pixel area and color bit depth, both expressed as a fraction of
+    /// the largest value present, and returns the index of the highest scoring image.
+    /// <para>
+    /// The weights are a ratio and are normalized internally, so 2 and 1 rank identically to 0.667 and 0.333.
+    /// Because both terms are relative to the supplied set, a score is only meaningful within that set.
+    /// </para>
+    /// </summary>
+    private static int BestByQuality(IReadOnlyList<ImageReference> imageReferences, float colorBitWeight, float areaWeight)
+    {
+        if (colorBitWeight < 0)
+            throw new ArgumentOutOfRangeException(nameof(colorBitWeight), colorBitWeight, "Weights cannot be negative.");
+        if (areaWeight < 0)
+            throw new ArgumentOutOfRangeException(nameof(areaWeight), areaWeight, "Weights cannot be negative.");
+
+        var weightSum = colorBitWeight + areaWeight;
+        if (weightSum <= 0)
+            throw new ArgumentException("At least one weight must be greater than zero.", nameof(areaWeight));
+
+        if (imageReferences.Count == 0)
+            return -1;
+
+        long maxArea = 0;
+        var maxBitCount = 0;
+        foreach (var imageReference in imageReferences)
         {
-            var imageReference = ImageReferences[i];
-            var qualityScore = imageReference.Width * imageReference.Height * (imageReference.BitCount * colorBitWeight);
+            maxArea = Math.Max(maxArea, (long)imageReference.Width * imageReference.Height);
+            maxBitCount = Math.Max(maxBitCount, imageReference.BitCount);
+        }
+
+        var bestIndex = 0;
+        var bestQuality = double.NegativeInfinity;
+        for (var i = 0; i < imageReferences.Count; i++)
+        {
+            var imageReference = imageReferences[i];
+            var areaRatio = maxArea > 0 ? (double)((long)imageReference.Width * imageReference.Height) / maxArea : 0;
+            var bitRatio = maxBitCount > 0 ? (double)imageReference.BitCount / maxBitCount : 0;
+            var qualityScore = ((areaWeight * areaRatio) + (colorBitWeight * bitRatio)) / weightSum;
 
             if (qualityScore > bestQuality)
             {
@@ -253,49 +317,6 @@ public class IcoData
         }
 
         return bestIndex;
-    }
-
-    /// <summary>
-    /// Determines the index of the preferred image for a given group based on its quality.
-    /// </summary>
-    /// <param name="groupName">The name of the ICO group.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
-    /// <param name="colorBitWeight">The weight to apply to the bit depth in the quality calculation.</param>
-    /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>).</returns>
-    public int PreferredImageIndex(string groupName, IcoType icoType, float colorBitWeight = 2f)
-    {
-        var group = GetGroup(groupName, icoType);
-        return PreferredImageIndex(group, colorBitWeight);
-    }
-
-    /// <summary>
-    /// Determines the index of the preferred image within a specified ICO group based on its quality.
-    /// </summary>
-    /// <param name="group">The ICO group containing the images.</param>
-    /// <param name="colorBitWeight">The weight to apply to the bit depth in the quality calculation.</param>
-    /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>).</returns>
-    public int PreferredImageIndex(IIcoGroup group, float colorBitWeight = 2f)
-    {
-        var bestIndex = 0;
-        float bestQuality = 0;
-
-        var imageReferences = new ImageReference[group.Size];
-        for (var i = 0; i < group.Size; i++)
-            imageReferences[i] = GetImageReference(group, i);
-
-        for (var i = 0; i < imageReferences.Length; i++)
-        {
-            var imageReference = imageReferences[i];
-            var qualityScore = imageReference.Width * imageReference.Height * (imageReference.BitCount * colorBitWeight);
-
-            if (qualityScore > bestQuality)
-            {
-                bestQuality = qualityScore;
-                bestIndex = i;
-            }
-        }
-
-        return ImageReferences.IndexOf(imageReferences[bestIndex]);
     }
 
     #endregion
@@ -396,11 +417,11 @@ public class IcoData
     /// <param name="group">The ICO group containing the image.</param>
     /// <param name="imageIndex">The index of the image within the group.</param>
     /// <returns>The <see cref="ImageReference"/> associated with the specified group and index.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="imageIndex"/> is out of range.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="imageIndex"/> is outside the group's entries.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the image reference is not found.</exception>
     public ImageReference GetImageReference(IIcoGroup group, int imageIndex)
     {
-        if (imageIndex < 0 || imageIndex >= ImageReferences.Count)
+        if (imageIndex < 0 || imageIndex >= group.Size)
             throw new ArgumentOutOfRangeException(nameof(imageIndex));
 
         var entry = group.DirectoryEntries![imageIndex];

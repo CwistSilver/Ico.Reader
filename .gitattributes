@@ -45,6 +45,17 @@
 #*.gif   binary
 
 ###############################################################################
+# test fixtures
+#
+# Byte-exact fixtures; any line ending conversion would corrupt them.
+###############################################################################
+*.ico    binary
+*.cur    binary
+*.res    binary
+*.gz     binary
+*.png    binary
+
+###############################################################################
 # diff behavior for common document formats
 # 
 # Convert binary document formats to text before diffing them. This feature

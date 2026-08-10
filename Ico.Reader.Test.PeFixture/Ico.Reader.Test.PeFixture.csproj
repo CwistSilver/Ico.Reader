@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A resource-only assembly used as the PE fixture for IcoPeDecoder tests.
+    Fixtures.res is compiled from Fixtures.rc by Tools/generate-fixtures.ps1 and carries
+    the RT_ICON / RT_GROUP_ICON resources the decoder reads out of EXE and DLL files.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <Win32Resource>$(MSBuildThisFileDirectory)..\Ico.Reader.Test\Resources\Pe\Fixtures.res</Win32Resource>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS8021</NoWarn>
+  </PropertyGroup>
+
+</Project>

@@ -40,11 +40,7 @@ public class SectionHeader
             sections[i] = new SectionHeader();
 
             Encoding.UTF8.GetChars(readOnlyData.Slice(sectionIndex, 8), nameChars);
-#if NETSTANDARD2_0
             sections[i].Name = nameChars.ToStringFast().Trim('\0');
-#elif NETSTANDARD2_1_OR_GREATER
-            sections[i].Name = new string(nameChars).Trim('\0');
-#endif
 
             sections[i].VirtualSize = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 8, 4));
             sections[i].VirtualAddress = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 12, 4));

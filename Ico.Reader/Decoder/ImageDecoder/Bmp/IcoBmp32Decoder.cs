@@ -11,7 +11,7 @@ public sealed class IcoBmp32Decoder : IIcoBmpDecoder
         var width = header.Width;
         var height = header.Height / 2;
         var pixels = new byte[width * height * 4];
-        var offset = header.Size + (header.ClrUsed * 4);
+        var offset = header.CalculateDataOffset();
 
         for (var y = height - 1; y >= 0; y--)
         {

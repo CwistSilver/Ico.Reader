@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 using Ico.Reader.Data;
 
@@ -6,6 +6,8 @@ namespace Ico.Reader.Utils;
 
 public static class IcoGroupUtils
 {
+    internal const int ExeEntrySize = 14;
+
     /// <summary>
     /// Reads ico directory entries from an executable file stream based on the specified ico header. This method adapts the process for the differences in ico data layout within EXE or DLL files.
     /// <para>
@@ -15,54 +17,46 @@ public static class IcoGroupUtils
     /// <param name="stream">The stream from which to read the ico directory entries, typically an EXE or DLL file stream.</param>
     /// <param name="icoHeader">The header that provides information about the number of images and their properties.</param>
     /// <returns>An array of <see cref="IconDirectoryEntry"/> objects representing the ico directory entries read from the executable file stream.</returns>
+    /// <exception cref="NotSupportedException">Thrown if the header declares an image type that is neither icon nor cursor.</exception>
     public static IIcoDirectoryEntry[] ReadFromEXEStream(Stream stream, IcoHeader icoHeader)
     {
-        var positionStart = stream.Position;
+        var imageType = icoHeader.ImageType;
 
-        var byteSize = 14 * icoHeader.ImageCount;
-        var entries = new IIcoDirectoryEntry[icoHeader.ImageCount];
-
-        Span<byte> entriesBuffer = stackalloc byte[byteSize];
-        stream.Read(entriesBuffer);
-        ReadOnlySpan<byte> entriesBufferSpan = entriesBuffer;
-
-        for (var i = 0; i < icoHeader.ImageCount; i++)
+        return DirectoryEntryReader.ReadEntries<IIcoDirectoryEntry>(stream, ExeEntrySize, icoHeader.ImageCount, entry => imageType switch
         {
-            var offset = i * 14;
-            var resourceID = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2));
-
-            if (icoHeader.ImageType == 1)
-            {
-                entries[i] = new IconDirectoryEntry
-                {
-                    Width = entriesBufferSpan[offset],
-                    Height = entriesBufferSpan[offset + 1],
-                    ColorCount = entriesBufferSpan[offset + 2],
-                    Reserved = entriesBufferSpan[offset + 3],
-                    Planes = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 4, 2)),
-                    ColorDepth = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 6, 2)),
-                    ImageSize = MemoryMarshal.Read<uint>(entriesBufferSpan.Slice(offset + 8, 4)),
-                    ImageOffset = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2))
-                };
-            }
-            else if (icoHeader.ImageType == 2)
-            {
-                entries[i] = new CursorDirectoryEntry()
-                {
-                    Width = entriesBufferSpan[offset],
-                    Height = entriesBufferSpan[offset + 1],
-                    Planes = 0,
-                    HotspotX = 0,
-                    HotspotY = 0,
-                    ColorDepth = 0,
-                    RealImageOffset = 0,
-                    ImageSize = MemoryMarshal.Read<uint>(entriesBufferSpan.Slice(offset + 8, 4)),
-                    ImageOffset = resourceID
-                };
-
-            }
-        }
-
-        return entries;
+            IconDirectoryEntry.ImageType => ParseIconEntry(entry),
+            CursorDirectoryEntry.ImageType => ParseCursorEntry(entry),
+            _ => throw new NotSupportedException($"The image type {imageType} is not supported.")
+        });
     }
+
+    internal static IconDirectoryEntry ParseIconEntry(ReadOnlySpan<byte> entry) => new()
+    {
+        Width = entry[0],
+        Height = entry[1],
+        ColorCount = entry[2],
+        Reserved = entry[3],
+        Planes = MemoryMarshal.Read<ushort>(entry.Slice(4, 2)),
+        ColorDepth = MemoryMarshal.Read<ushort>(entry.Slice(6, 2)),
+        ImageSize = MemoryMarshal.Read<uint>(entry.Slice(8, 4)),
+        ImageOffset = MemoryMarshal.Read<ushort>(entry.Slice(12, 2))
+    };
+
+    /// <summary>
+    /// Parses one entry of an RT_GROUP_CURSOR directory.
+    /// </summary>
+    /// <remarks>
+    /// Unlike an icon group, a cursor group stores width and height as words, and the height covers
+    /// the stacked AND mask so it is twice the visible height. Narrowing the result to a byte keeps
+    /// the format's convention that 0 stands for 256.
+    /// </remarks>
+    internal static CursorDirectoryEntry ParseCursorEntry(ReadOnlySpan<byte> entry) => new()
+    {
+        Width = (byte)MemoryMarshal.Read<ushort>(entry.Slice(0, 2)),
+        Height = (byte)(MemoryMarshal.Read<ushort>(entry.Slice(2, 2)) / 2),
+        Planes = MemoryMarshal.Read<ushort>(entry.Slice(4, 2)),
+        ColorDepth = MemoryMarshal.Read<ushort>(entry.Slice(6, 2)),
+        ImageSize = MemoryMarshal.Read<uint>(entry.Slice(8, 4)),
+        ImageOffset = MemoryMarshal.Read<ushort>(entry.Slice(12, 2))
+    };
 }

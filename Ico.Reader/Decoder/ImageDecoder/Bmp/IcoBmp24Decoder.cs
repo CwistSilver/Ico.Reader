@@ -12,7 +12,7 @@ public sealed class IcoBmp24Decoder : IIcoBmpDecoder
         var height = header.Height / 2;
         var argbData = new byte[width * height * 4];
 
-        var dataOffset = header.Size + (header.ClrUsed * 4);
+        var dataOffset = header.CalculateDataOffset();
         var bytesPerRowImage = 3 * width;
         var imageRowPadding = (4 - (bytesPerRowImage % 4)) % 4;
         var totalImageSize = (bytesPerRowImage + imageRowPadding) * height;

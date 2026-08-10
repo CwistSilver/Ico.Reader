@@ -146,23 +146,33 @@ Each `ImageReference` exposes metadata about the individual image:
 
 ### Selecting the Preferred Image Based on Quality
 
-To select the preferred image, `Ico.Reader` calculates a quality score for each image, taking into account its **dimensions and bit depth**.
-This calculation applies a **weight factor to the bit depth** to adjust its influence on the overall quality score.
-The preferred image is determined as the one with the **highest calculated quality score**.
+To select the preferred image, `Ico.Reader` calculates a quality score for each image from its **pixel area** and **colour bit depth**.
+Each is scored as a **fraction of the best value present**, and the two are combined using the supplied **weights**.
+The weights are a ratio and are normalised internally, so `colorBitWeight: 1, areaWeight: 2` ranks identically to `0.333` and `0.667`.
+The preferred image is the one with the **highest calculated quality score**.
 
 You can retrieve the preferred image either **globally** (from all groups) or **from a specific group**:
 
 ```cs
 // Selecting the preferred image globally from all groups
-int preferredIndex = icoData.PreferredImageIndex(colorBitWeight: 2f);
+// Default: area counts twice as much as colour depth
+int preferredIndex = icoData.PreferredImageIndex();
 var imageRef = icoData.ImageReferences[preferredIndex];
 var imageData = icoData.GetImage(imageRef);
 
+// Weight colour depth more heavily than size
+int deepestIndex = icoData.PreferredImageIndex(colorBitWeight: 2f, areaWeight: 1f);
+
+// Ignore colour depth entirely and take the largest image
+int largestIndex = icoData.PreferredImageIndex(colorBitWeight: 0f, areaWeight: 1f);
+
 // Selecting the preferred image from a specific group
-int preferredGroupIndex = icoData.PreferredImageIndex(selectedGroup, colorBitWeight: 2f);
-var imageRef = icoData.ImageReferences[preferredGroupIndex];
-var imageData = icoData.GetImage(imageRef);
+int preferredGroupIndex = icoData.PreferredImageIndex(selectedGroup);
+var groupImageRef = icoData.ImageReferences[preferredGroupIndex];
+var groupImageData = icoData.GetImage(groupImageRef);
 ```
+
+Returns `-1` when there are no images to choose from.
 
 ### Saving / Exporting Images
 

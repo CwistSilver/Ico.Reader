@@ -48,9 +48,23 @@ public sealed class PngDecoder : IDecoder
 
     private static int ReadBitCount(ReadOnlySpan<byte> data)
     {
-        int bitCountByte = data[24];
-        int colorTypeByte = data[25];
+        int bitDepth = data[24];
+        int colorType = data[25];
 
-        return bitCountByte * colorTypeByte;
+        return bitDepth * SamplesPerPixel(colorType);
     }
+
+    /// <summary>
+    /// Maps an IHDR colour type to the number of samples it stores per pixel.
+    /// <para> Reference: <see href="https://www.w3.org/TR/png/#6Colour-values">PNG Specification, Colour values</see> </para>
+    /// </summary>
+    private static int SamplesPerPixel(int colorType) => colorType switch
+    {
+        0 => 1, // Greyscale
+        2 => 3, // Truecolour
+        3 => 1, // Indexed-colour
+        4 => 2, // Greyscale with alpha
+        6 => 4, // Truecolour with alpha
+        _ => 0,
+    };
 }

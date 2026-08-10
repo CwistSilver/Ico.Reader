@@ -20,7 +20,7 @@ public sealed class IcoBmp8Decoder : IIcoBmpDecoder
         var imageRowPadding = (4 - (bytesPerRowImage % 4)) % 4;
         var totalImageSize = (bytesPerRowImage + imageRowPadding) * height;
 
-        var dataOffset = CalculateDataOffset(header);
+        var dataOffset = header.CalculateDataOffset();
         var maskOffset = dataOffset + totalImageSize;
 
         var maskRowBytesActual = (width + 7) / 8;
@@ -61,8 +61,6 @@ public sealed class IcoBmp8Decoder : IIcoBmpDecoder
 
         return rgbaData;
     }
-
-    public int CalculateDataOffset(BMP_Info_Header header) => header.Size + (header.ClrUsed > 0 ? header.ClrUsed : (1 << header.BitCount)) * 4;
 
     private static void MakeImageVisible(Span<byte> rgbaData, ref Color[] palette)
     {

@@ -102,6 +102,7 @@ public sealed class ImageReference
 
         if (icoDirectoryEntry is CursorDirectoryEntry cursorDirectoryEntry)
         {
+            imageReference.IcoType = IcoType.Cursor;
             imageReference.HotspotY = cursorDirectoryEntry.HotspotY;
             imageReference.HotspotX = cursorDirectoryEntry.HotspotX;
         }
@@ -111,14 +112,16 @@ public sealed class ImageReference
         stream.Read(data);
 
         ReadOnlySpan<byte> readOnlyData = data;
-        imageReference.Format = icoDecoder.ReadFormat(readOnlyData);
+        var imageMetadata = icoDecoder.ReadImageMetadata(readOnlyData);
+        if (imageMetadata is null)
+            return null;
 
+        imageReference.Format = imageMetadata.Format;
+
+        // A directory entry stores width and height in a single byte each and uses 0 for 256, so
+        // anything it cannot express has to come from the image header.
         if (imageReference.Width == 0 || imageReference.Height == 0 || imageReference.BitCount == 0)
         {
-            var imageMetadata = icoDecoder.ReadImageMetadata(readOnlyData);
-            if (imageMetadata is null)
-                return imageReference;
-
             imageReference.Width = imageMetadata.Width;
             imageReference.Height = imageMetadata.Height;
             imageReference.BitCount = imageMetadata.BitCount;

@@ -1,5 +1,3 @@
-﻿using System.Runtime.InteropServices;
-
 using Ico.Reader.Utils;
 
 namespace Ico.Reader.Data;
@@ -54,37 +52,9 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
     public CursorDirectoryEntry[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
     {
         if (icoHeader.ImageType != CursorDirectoryEntry.ImageType)
-            throw new Exception("The ico data does not contain cursor data.");
+            throw new ArgumentException("The ico data does not contain cursor data.", nameof(icoHeader));
 
-        var positionStart = stream.Position;
-
-        var byteSize = 14 * icoHeader.ImageCount;
-        var entries = new CursorDirectoryEntry[icoHeader.ImageCount];
-
-        Span<byte> entriesBuffer = stackalloc byte[byteSize];
-        stream.Read(entriesBuffer);
-        ReadOnlySpan<byte> entriesBufferSpan = entriesBuffer;
-
-        for (var i = 0; i < icoHeader.ImageCount; i++)
-        {
-            var offset = i * 14;
-            var resourceID = MemoryMarshal.Read<ushort>(entriesBufferSpan.Slice(offset + 12, 2));
-
-            entries[i] = new CursorDirectoryEntry()
-            {
-                Width = entriesBufferSpan[offset],
-                Height = entriesBufferSpan[offset + 1],
-                Planes = 0,
-                HotspotX = 0,
-                HotspotY = 0,
-                ColorDepth = 0,
-                RealImageOffset = 0,
-                ImageSize = MemoryMarshal.Read<uint>(entriesBufferSpan.Slice(offset + 8, 4)),
-                ImageOffset = resourceID
-            };
-        }
-
-        return entries;
+        return DirectoryEntryReader.ReadEntries(stream, IcoGroupUtils.ExeEntrySize, icoHeader.ImageCount, IcoGroupUtils.ParseCursorEntry);
     }
 
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
