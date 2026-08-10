@@ -54,7 +54,13 @@ using (var streamOrigin = File.OpenRead("path/to/your/icon.ico"))
 ```
 
 - `copyStream: true` → The stream is **copied**, allowing access to images even after the original stream is closed.
-- `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must remain open while accessing images.
+- `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must remain open while accessing images. Accessing an image after it closes throws `ObjectDisposedException`.
+
+### Thread Safety
+
+`IcoReader` is safe to share across threads, and so is any `IcoData` read from a **file path**, a **byte array**, or a **copied stream** — each image read opens its own stream, so concurrent calls to `GetImage`, `GetImageAsync` and the save methods are fine.
+
+The one exception is `copyStream: false`. That mode reads directly from the stream you supplied, so all readers share a single position and it must be used by **one thread at a time**. Use `copyStream: true` if several threads need the same `IcoData`.
 
 > **Note:** All `Read()` overloads return `null` if the file does not exist, the format is unrecognized or the data cannot be parsed.
 

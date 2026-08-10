@@ -37,6 +37,55 @@ public sealed class DataSourceTests
     }
 
     [Fact]
+    public void StreamBufferSource_HandsOutIndependentStreams()
+    {
+        using var origin = new MemoryStream(Payload);
+        var source = new StreamBufferSource(origin);
+
+        using var first = source.GetStream();
+        using var second = source.GetStream();
+        first.Position = 3;
+
+        Assert.Equal(0, second.Position);
+    }
+
+    [Fact]
+    public void PathSource_HandsOutIndependentStreams()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllBytes(path, Payload);
+            var source = new PathSource(path);
+
+            using var first = source.GetStream();
+            using var second = source.GetStream();
+            first.Position = 3;
+
+            Assert.Equal(0, second.Position);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void StreamSource_SharesOnePositionAcrossEveryStreamItHandsOut()
+    {
+        // Unlike the other sources, this one wraps the caller's stream rather than opening a new
+        // one, so every reader shares a position. That is why a non-copied stream is single-reader.
+        using var origin = new MemoryStream(Payload);
+        var source = new StreamSource(origin);
+
+        using var first = source.GetStream();
+        using var second = source.GetStream();
+        first.Position = 3;
+
+        Assert.Equal(3, second.Position);
+    }
+
+    [Fact]
     public void PathSource_ReadsTheFile()
     {
         var path = Path.GetTempFileName();
