@@ -9,15 +9,15 @@ public sealed class IcoHeader
     /// <summary>
     /// Reserved; must always be set to 0.
     /// </summary>
-    public ushort Reserved { get; set; }
+    public ushort Reserved { get; init; }
 
     /// <summary>
     /// Specifies the type of the image; 1 for ico (.ICO) images, 2 for cursor (.CUR) images.
     /// </summary>
-    public ushort ImageType { get; set; }
+    public ushort ImageType { get; init; }
 
     /// <summary>
     /// The number of images in the ico or cursor file.
     /// </summary>
-    public ushort ImageCount { get; set; }
+    public ushort ImageCount { get; init; }
 }

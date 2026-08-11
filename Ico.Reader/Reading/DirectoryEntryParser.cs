@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using System.Runtime.InteropServices;
 
 using Ico.Reader.Data;
@@ -32,7 +32,11 @@ internal static class DirectoryEntryParser
 
         return ReadEntries<IIcoDirectoryEntry>(stream, FileEntrySize, icoHeader.ImageCount, entry =>
         {
-            IIcoDirectoryEntry directoryEntry = imageType switch
+            // In a file the directory offset is already the real one, so it is set here rather
+            // than resolved afterwards as the PE layout requires.
+            var imageOffset = MemoryMarshal.Read<uint>(entry.Slice(12, 4));
+
+            return imageType switch
             {
                 IconDirectoryEntry.ImageType => new IconDirectoryEntry
                 {
@@ -43,7 +47,8 @@ internal static class DirectoryEntryParser
                     Planes = MemoryMarshal.Read<ushort>(entry.Slice(4, 2)),
                     ColorDepth = MemoryMarshal.Read<ushort>(entry.Slice(6, 2)),
                     ImageSize = MemoryMarshal.Read<uint>(entry.Slice(8, 4)),
-                    ImageOffset = MemoryMarshal.Read<uint>(entry.Slice(12, 4))
+                    ImageOffset = imageOffset,
+                    RealImageOffset = imageOffset
                 },
                 CursorDirectoryEntry.ImageType => new CursorDirectoryEntry
                 {
@@ -53,14 +58,11 @@ internal static class DirectoryEntryParser
                     HotspotX = MemoryMarshal.Read<ushort>(entry.Slice(4, 2)),
                     HotspotY = MemoryMarshal.Read<ushort>(entry.Slice(6, 2)),
                     ImageSize = MemoryMarshal.Read<uint>(entry.Slice(8, 4)),
-                    ImageOffset = MemoryMarshal.Read<uint>(entry.Slice(12, 4))
+                    ImageOffset = imageOffset,
+                    RealImageOffset = imageOffset
                 },
                 _ => throw new NotSupportedException($"The image type {imageType} is not supported.")
             };
-
-            // In a file the offset is already the real one; nothing has to resolve it later.
-            directoryEntry.RealImageOffset = directoryEntry.ImageOffset;
-            return directoryEntry;
         });
     }
 

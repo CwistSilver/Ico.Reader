@@ -1,4 +1,4 @@
-using Ico.Reader.Data;
+﻿using Ico.Reader.Data;
 using Ico.Reader.Decoder;
 
 namespace Ico.Reader.Reading;
@@ -25,33 +25,23 @@ internal static class ImageReferenceReader
         if (imageMetadata is null)
             return null;
 
+        // A directory entry stores width and height in a single byte each and uses 0 for 256, so
+        // anything it cannot express has to come from the image header.
+        var declaresItsOwnSize = directoryEntry.Width != 0 && directoryEntry.Height != 0 && directoryEntry.ColorDepth != 0;
+
         var imageReference = new ImageReference
         {
             Offset = directoryEntry.ImageOffset,
             Size = directoryEntry.ImageSize,
-            Width = directoryEntry.Width,
-            Height = directoryEntry.Height,
-            BitCount = directoryEntry.ColorDepth,
+            Width = declaresItsOwnSize ? directoryEntry.Width : imageMetadata.Width,
+            Height = declaresItsOwnSize ? directoryEntry.Height : imageMetadata.Height,
+            BitCount = declaresItsOwnSize ? directoryEntry.ColorDepth : imageMetadata.BitCount,
             Format = imageMetadata.Format
         };
 
-        if (directoryEntry is CursorDirectoryEntry cursorDirectoryEntry)
-        {
-            imageReference.IcoType = IcoType.Cursor;
-            imageReference.HotspotX = cursorDirectoryEntry.HotspotX;
-            imageReference.HotspotY = cursorDirectoryEntry.HotspotY;
-        }
-
-        // A directory entry stores width and height in a single byte each and uses 0 for 256, so
-        // anything it cannot express has to come from the image header.
-        if (imageReference.Width == 0 || imageReference.Height == 0 || imageReference.BitCount == 0)
-        {
-            imageReference.Width = imageMetadata.Width;
-            imageReference.Height = imageMetadata.Height;
-            imageReference.BitCount = imageMetadata.BitCount;
-        }
-
-        return imageReference;
+        return directoryEntry is CursorDirectoryEntry cursor
+            ? imageReference.AsCursor(cursor.HotspotX, cursor.HotspotY)
+            : imageReference;
     }
 
     /// <summary>
@@ -61,14 +51,7 @@ internal static class ImageReferenceReader
     /// <returns>A reference, or null when the image is in a format no decoder recognises.</returns>
     public static ImageReference? FromStream(Stream stream, uint offset, uint size, IIcoDecoder icoDecoder)
     {
-        var imageReference = ReadMetadata(stream, offset, icoDecoder);
-        if (imageReference is null)
-            return null;
-
-        imageReference.Offset = offset;
-        imageReference.Size = size;
-
-        return imageReference;
+        return ReadMetadata(stream, offset, icoDecoder)?.WithLocation(offset, size);
     }
 
     private static ImageReference? ReadMetadata(Stream stream, uint offset, IIcoDecoder icoDecoder)

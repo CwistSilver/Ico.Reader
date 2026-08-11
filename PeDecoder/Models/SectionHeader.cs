@@ -5,16 +5,16 @@ internal sealed class SectionHeader
 {
     public const uint SectionSize = 40;
 
-    public string Name { get; set; } = null!;
-    public uint VirtualSize { get; set; }
-    public uint VirtualAddress { get; set; }
-    public uint SizeOfRawData { get; set; }
-    public uint PointerToRawData { get; set; }
-    public uint PointerToRelocations { get; set; }
-    public uint PointerToLinenumbers { get; set; }
-    public ushort NumberOfRelocations { get; set; }
-    public ushort NumberOfLinenumbers { get; set; }
-    public SectionFlag Characteristics { get; set; }
+    public string Name { get; init; } = null!;
+    public uint VirtualSize { get; init; }
+    public uint VirtualAddress { get; init; }
+    public uint SizeOfRawData { get; init; }
+    public uint PointerToRawData { get; init; }
+    public uint PointerToRelocations { get; init; }
+    public uint PointerToLinenumbers { get; init; }
+    public ushort NumberOfRelocations { get; init; }
+    public ushort NumberOfLinenumbers { get; init; }
+    public SectionFlag Characteristics { get; init; }
 
     public override string ToString() => $"{Name}";
 

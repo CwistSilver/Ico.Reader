@@ -200,8 +200,7 @@ public sealed class IcoReader
             if (imageReference is null)
                 return null;
 
-            imageReference.Id = i;
-            decodedicoResult.References.Add(imageReference);
+            decodedicoResult.References.Add(imageReference.WithId(i));
         }
 
         return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedicoResult);

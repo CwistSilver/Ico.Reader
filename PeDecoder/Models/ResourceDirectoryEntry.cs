@@ -4,8 +4,8 @@ internal sealed class ResourceDirectoryEntry
 {
     public const byte ResourceDirectoryEntrySize = 8;
 
-    public uint NameOffset { get; set; }
-    public uint IntegerID { get; set; }
-    public uint DataEntryOffset { get; set; }
-    public uint SubdirectoryOffset { get; set; }
+    public uint NameOffset { get; init; }
+    public uint IntegerID { get; init; }
+    public uint DataEntryOffset { get; init; }
+    public uint SubdirectoryOffset { get; init; }
 }

@@ -61,8 +61,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 return;
 
-            reference.Id = (int)icoDataEntry.ID;
-            decodedIcoResult.References.Add(reference);
+            decodedIcoResult.References.Add(reference.WithId((int)icoDataEntry.ID));
         }
 
         var icoResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_ICON.ToString());
@@ -97,8 +96,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
                 if (reference is null)
                     continue;
 
-                entry.RealImageOffset = reference.Offset;
-                directoryEntries.Add(entry);
+                directoryEntries.Add(entry.WithRealImageOffset(reference.Offset));
             }
 
             if (directoryEntries.Count == 0)
@@ -134,12 +132,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 return;
 
-            reference.Id = (int)curDataEntry.ID;
-            reference.IcoType = IcoType.Cursor;
-            reference.HotspotX = hotspotX;
-            reference.HotspotY = hotspotY;
-
-            decodedIcoResult.References.Add(reference);
+            decodedIcoResult.References.Add(reference.WithId((int)curDataEntry.ID).AsCursor(hotspotX, hotspotY));
         }
 
         var curResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_CURSOR.ToString());
@@ -171,10 +164,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
                 if (reference is null)
                     continue;
 
-                entry.RealImageOffset = reference.Offset;
-                entry.HotspotX = reference.HotspotX;
-                entry.HotspotY = reference.HotspotY;
-                directoryEntries.Add(entry);
+                directoryEntries.Add(entry.WithResolvedResource(reference.Offset, reference.HotspotX, reference.HotspotY));
             }
 
             if (directoryEntries.Count == 0)

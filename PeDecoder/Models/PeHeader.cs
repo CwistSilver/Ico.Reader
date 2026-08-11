@@ -4,13 +4,13 @@ internal sealed class PeHeader
 {
     public const uint PeHeaderSize = 24;
 
-    public MachineType Machine { get; set; }
-    public ushort NumberOfSections { get; set; }
-    public DateTime TimeDateStamp { get; set; }
-    public uint PointerToSymbolTable { get; set; }
-    public uint NumberOfSymbols { get; set; }
-    public ushort SizeOfOptionalHeader { get; set; }
-    public Characteristics Characteristics { get; set; }
-    public uint HeaderOffset { get; set; }
-    public OptionalHeader? Optional { get; set; }
+    public MachineType Machine { get; init; }
+    public ushort NumberOfSections { get; init; }
+    public DateTime TimeDateStamp { get; init; }
+    public uint PointerToSymbolTable { get; init; }
+    public uint NumberOfSymbols { get; init; }
+    public ushort SizeOfOptionalHeader { get; init; }
+    public Characteristics Characteristics { get; init; }
+    public uint HeaderOffset { get; init; }
+    public OptionalHeader? Optional { get; init; }
 }

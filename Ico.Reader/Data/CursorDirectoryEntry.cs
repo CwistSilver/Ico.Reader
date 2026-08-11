@@ -13,32 +13,52 @@ public sealed class CursorDirectoryEntry : IIcoDirectoryEntry
     /// The X-coordinate of the cursor's hotspot.
     /// The hotspot is the point within the cursor that acts as the click point.
     /// </summary>
-    public ushort HotspotX { get; internal set; }
+    public ushort HotspotX { get; init; }
 
     /// <summary>
     /// The Y-coordinate of the cursor's hotspot.
     /// The hotspot is the point within the cursor that acts as the click point.
     /// </summary>
-    public ushort HotspotY { get; internal set; }
+    public ushort HotspotY { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public byte Width { get; set; }
+    public byte Width { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public byte Height { get; set; }
+    public byte Height { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public ushort Planes { get; set; }
+    public ushort Planes { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public ushort ColorDepth { get; set; }
+    public ushort ColorDepth { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint ImageSize { get; set; }
+    public uint ImageSize { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint ImageOffset { get; set; }
+    public uint ImageOffset { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint RealImageOffset { get; set; }
+    public uint RealImageOffset { get; init; }
+
+    /// <summary>
+    /// Returns a copy carrying the resolved image offset and the hotspot read from the resource.
+    /// </summary>
+    /// <remarks>
+    /// Inside a PE, <see cref="ImageOffset"/> holds a resource id rather than a position, and the
+    /// hotspot is a prefix on the resource data rather than a field of the group directory.
+    /// </remarks>
+    internal CursorDirectoryEntry WithResolvedResource(uint realImageOffset, ushort hotspotX, ushort hotspotY) => new()
+    {
+        Width = Width,
+        Height = Height,
+        Planes = Planes,
+        ColorDepth = ColorDepth,
+        ImageSize = ImageSize,
+        ImageOffset = ImageOffset,
+        RealImageOffset = realImageOffset,
+        HotspotX = hotspotX,
+        HotspotY = hotspotY
+    };
 }

@@ -4,8 +4,8 @@ namespace PeDecoder.Models;
 
 internal sealed class ImageDataDirectory
 {
-    public uint VirtualAddress { get; set; }
-    public uint Size { get; set; }
+    public uint VirtualAddress { get; init; }
+    public uint Size { get; init; }
 
     public SectionHeader FindFileSectionHeader(IEnumerable<SectionHeader> sectionHeaders)
     {

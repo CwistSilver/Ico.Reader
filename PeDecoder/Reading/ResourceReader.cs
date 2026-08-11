@@ -125,33 +125,35 @@ internal static class ResourceReader
 
             for (var i = 0; i < total; i++)
             {
-                var entrySpan = data.Slice(ResourceDirectoryEntry.ResourceDirectoryEntrySize * i, ResourceDirectoryEntry.ResourceDirectoryEntrySize);
-                entries[i] = new ResourceDirectoryEntry();
-                AddNameOrId(entries[i], entrySpan);
-                AddSubdirectoryOrDataEntry(entries[i], entrySpan);
+                    entries[i] = ParseDirectoryEntry(data.Slice(ResourceDirectoryEntry.ResourceDirectoryEntrySize * i, ResourceDirectoryEntry.ResourceDirectoryEntrySize));
             }
 
             return entries;
         });
     }
 
-    private static void AddNameOrId(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)
+    /// <summary>
+    /// Parses one directory entry. The high bit of each field selects which of two meanings it
+    /// carries: a name offset or an integer id, and a subdirectory offset or a data entry offset.
+    /// </summary>
+    private static ResourceDirectoryEntry ParseDirectoryEntry(ReadOnlySpan<byte> entrySpan)
     {
-        var nameOffsetOrIntegerID = MemoryMarshal.Read<uint>(entrySpan.Slice(0, 4));
-        if ((nameOffsetOrIntegerID & 0x80000000) != 0)
-            entry.NameOffset = nameOffsetOrIntegerID & 0x7FFFFFFF;
-        else
-            entry.IntegerID = nameOffsetOrIntegerID;
-    }
+        const uint HighBit = 0x80000000;
+        const uint OffsetMask = 0x7FFFFFFF;
 
-    private static void AddSubdirectoryOrDataEntry(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)
-    {
+        var nameOrId = MemoryMarshal.Read<uint>(entrySpan.Slice(0, 4));
         var offset = MemoryMarshal.Read<uint>(entrySpan.Slice(4, 4));
-        var isSubdirectoryOffset = (offset & 0x80000000) != 0;
-        if (isSubdirectoryOffset)
-            entry.SubdirectoryOffset = offset & 0x7FFFFFFF;
-        else
-            entry.DataEntryOffset = offset;
+
+        var isName = (nameOrId & HighBit) != 0;
+        var isSubdirectory = (offset & HighBit) != 0;
+
+        return new ResourceDirectoryEntry
+        {
+            NameOffset = isName ? nameOrId & OffsetMask : 0,
+            IntegerID = isName ? 0 : nameOrId,
+            SubdirectoryOffset = isSubdirectory ? offset & OffsetMask : 0,
+            DataEntryOffset = isSubdirectory ? 0 : offset
+        };
     }
 
     private static ResourceDataEntry ReadDataEntry(Stream stream, long baseOffset, uint dataEntryOffset)

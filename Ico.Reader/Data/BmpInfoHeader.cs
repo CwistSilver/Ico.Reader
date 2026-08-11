@@ -8,57 +8,57 @@ public sealed class BmpInfoHeader
     /// <summary>
     /// The size of this header in bytes.
     /// </summary>
-    public int Size { get; set; }
+    public int Size { get; init; }
 
     /// <summary>
     /// The width of the bitmap in pixels.
     /// </summary>
-    public int Width { get; set; }
+    public int Width { get; init; }
 
     /// <summary>
     /// The height of the bitmap in pixels.
     /// </summary>
-    public int Height { get; set; }
+    public int Height { get; init; }
 
     /// <summary>
     /// The number of color planes being used. Must be set to 1.
     /// </summary>
-    public ushort Planes { get; set; }
+    public ushort Planes { get; init; }
 
     /// <summary>
     /// The number of bits per pixel, which determines the number of colors that can be represented.
     /// </summary>
-    public ushort BitCount { get; set; }
+    public ushort BitCount { get; init; }
 
     /// <summary>
     /// The type of compression for a compressed bottom-up bitmap (top-down DIBs cannot be compressed).
     /// </summary>
-    public int Compression { get; set; }
+    public int Compression { get; init; }
 
     /// <summary>
     /// The size, in bytes, of the image.
     /// </summary>
-    public int SizeImage { get; set; }
+    public int SizeImage { get; init; }
 
     /// <summary>
     /// The horizontal resolution of the image, in pixels per meter.
     /// </summary>
-    public int XPelsPerMeter { get; set; }
+    public int XPelsPerMeter { get; init; }
 
     /// <summary>
     /// The vertical resolution of the image, in pixels per meter.
     /// </summary>
-    public int YPelsPerMeter { get; set; }
+    public int YPelsPerMeter { get; init; }
 
     /// <summary>
     /// The number of colors in the color palette that are actually used by the bitmap. If this value is 0, all colors are used.
     /// </summary>
-    public int ClrUsed { get; set; }
+    public int ClrUsed { get; init; }
 
     /// <summary>
     /// The number of important colors used by the bitmap. If this value is 0, all colors are considered important.
     /// </summary>
-    public int ClrImportant { get; set; }
+    public int ClrImportant { get; init; }
 
     /// <summary>
     /// Calculates the number of colors in the color palette that precedes the bitmap data.

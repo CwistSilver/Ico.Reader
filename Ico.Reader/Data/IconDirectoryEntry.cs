@@ -13,32 +13,51 @@ public sealed class IconDirectoryEntry : IIcoDirectoryEntry
     /// <summary>
     /// Reserved property, should always be set to 0.
     /// </summary>
-    public byte Reserved { get; internal set; }
+    public byte Reserved { get; init; }
 
     /// <summary>
     /// The number of colors in the ico's palette; 0 means the image does not use a palette.
     /// </summary>
-    public byte ColorCount { get; internal set; }
+    public byte ColorCount { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public byte Width { get; set; }
+    public byte Width { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public byte Height { get; set; }
+    public byte Height { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public ushort Planes { get; set; }
+    public ushort Planes { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public ushort ColorDepth { get; set; }
+    public ushort ColorDepth { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint ImageSize { get; set; }
+    public uint ImageSize { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint ImageOffset { get; set; }
+    public uint ImageOffset { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint RealImageOffset { get; set; }
+    public uint RealImageOffset { get; init; }
+
+    /// <summary>
+    /// Returns a copy whose <see cref="RealImageOffset"/> points at the resolved image.
+    /// </summary>
+    /// <remarks>
+    /// Inside a PE, <see cref="ImageOffset"/> holds a resource id rather than a position, so the
+    /// real offset is only known once the resource it names has been located.
+    /// </remarks>
+    internal IconDirectoryEntry WithRealImageOffset(uint realImageOffset) => new()
+    {
+        Reserved = Reserved,
+        ColorCount = ColorCount,
+        Width = Width,
+        Height = Height,
+        Planes = Planes,
+        ColorDepth = ColorDepth,
+        ImageSize = ImageSize,
+        ImageOffset = ImageOffset,
+        RealImageOffset = realImageOffset
+    };
 }
-
