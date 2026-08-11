@@ -8,7 +8,7 @@ public sealed class PngCreatorTests
 {
     private readonly PngCreator _creator = new();
 
-    private static BMP_Info_Header Header(int width, int height) => new()
+    private static BmpInfoHeader Header(int width, int height) => new()
     {
         Size = 40,
         Width = width,

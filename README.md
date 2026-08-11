@@ -43,6 +43,9 @@ IcoData icoFromBytes = icoReader.Read(icoBytes);
 using var stream = File.OpenRead("path/to/your/icon.ico");
 IcoData icoFromStream = icoReader.Read(stream: stream, copyStream: true);
 
+// Reading asynchronously
+IcoData iconAsync = await icoReader.ReadAsync("path/to/your/icon.ico", cancellationToken);
+
 // Reading from a stream without copying (as efficient as direct file reading)
 using (var streamOrigin = File.OpenRead("path/to/your/icon.ico"))
 {
@@ -75,7 +78,7 @@ Each image within an ico file is assigned a unique index, accessible through the
 byte[] imageData = icoData.GetImage(0);
 
 // Asynchronously retrieve image data by index
-byte[] imageDataAsync = await icoData.GetImageAsync(0);
+byte[] imageDataAsync = await icoData.GetImageAsync(0, cancellationToken);
 ```
 
 #### Retrieving Images by Group
@@ -145,7 +148,7 @@ Each `ImageReference` exposes metadata about the individual image:
 | `Width`    | `int`            | Image width in pixels                      |
 | `Height`   | `int`            | Image height in pixels                     |
 | `BitCount` | `int`            | Bit depth (e.g. 1, 4, 8, 24, 32)           |
-| `Format`   | `IcoImageFormat` | `BMP` or `PNG`                             |
+| `Format`   | `IcoImageFormat` | `Bmp` or `Png`                             |
 | `IcoType`  | `IcoType`        | `Icon` or `Cursor`                         |
 | `HotspotX` | `ushort`         | Cursor hotspot X coordinate (cursors only) |
 | `HotspotY` | `ushort`         | Cursor hotspot Y coordinate (cursors only) |
@@ -182,23 +185,31 @@ Returns `-1` when there are no images to choose from.
 
 ### Saving / Exporting Images
 
-`IcoData` provides convenience methods for saving decoded images directly to disk.
+Writing images to disk is the job of `IcoExporter`. It has no dependencies, so a container is optional — see [Dependency Injection Support](#dependency-injection-support) if you prefer to inject `IIcoExporter`.
 
 ```cs
-// Save a single image by its global index
-await icoData.SaveImageAsync(0, "output/image_0.png");
+var exporter = new IcoExporter();
+
+// Save a single image
+await exporter.SaveImageAsync(icoData, icoData.ImageReferences[0], "output/image_0.png");
 
 // Save a single image from a specific group
-await icoData.SaveImageAsync(group, 0, "output/group_image.png");
+await exporter.SaveImageAsync(icoData, icoData.GetImageReference(group, 0), "output/group_image.png");
 
 // Save all images in a group into a directory (one file per image)
-await icoData.SaveGroupToDirectory(group, "output/group/");
+await exporter.SaveGroupToDirectoryAsync(icoData, group, "output/group/");
 
 // Save all groups into subdirectories of a root directory
-await icoData.SaveAllGroupsToDirectory("output/");
+await exporter.SaveAllGroupsToDirectoryAsync(icoData, "output/");
 
 // Save all images flat into a single directory
-await icoData.SaveAllImagesToDirectory("output/flat/");
+await exporter.SaveAllImagesToDirectoryAsync(icoData, "output/flat/");
+```
+
+Every asynchronous method accepts a `CancellationToken`:
+
+```cs
+await exporter.SaveAllImagesToDirectoryAsync(icoData, "output/", cancellationToken);
 ```
 
 ## Configuration
@@ -233,6 +244,8 @@ public void ConfigureServices(IServiceCollection services)
     services.AddIcoReader();
 }
 ```
+
+This registers `IcoReader`, `IIcoExporter` and the decoders. Using a container is entirely optional: every one of those types also has a parameterless constructor, so `new IcoReader()` and `new IcoExporter()` give you the same composition.
 
 ## Dependencies
 

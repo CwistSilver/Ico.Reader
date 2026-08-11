@@ -14,14 +14,7 @@ public sealed class IcoDecoder : IIcoDecoder
         _decoders = [.. decoders];
     }
 
-    public IcoDecoder()
-    {
-        _decoders =
-        [
-            new BmpDecoder(),
-            new PngDecoder()
-        ];
-    }
+    public IcoDecoder() : this(IcoReaderDefaults.CreateImageDecoders()) { }
 
     public byte[] GetImageData(ReadOnlySpan<byte> imageData, IcoImageFormat format)
     {

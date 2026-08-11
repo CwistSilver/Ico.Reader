@@ -10,7 +10,7 @@ public sealed class BmpInfoHeaderTests
     [InlineData(8, 16, 16)]
     public void CalculatePaletteSize_UsesClrUsedWhenItFits(ushort bitCount, int clrUsed, int expected)
     {
-        var header = new BMP_Info_Header { BitCount = bitCount, ClrUsed = clrUsed };
+        var header = new BmpInfoHeader { BitCount = bitCount, ClrUsed = clrUsed };
 
         Assert.Equal(expected, header.CalculatePaletteSize());
     }
@@ -18,7 +18,7 @@ public sealed class BmpInfoHeaderTests
     [Fact]
     public void CalculatePaletteSize_FallsBackToTheFullPaletteWhenClrUsedIsTooLarge()
     {
-        var header = new BMP_Info_Header { BitCount = 4, ClrUsed = 999 };
+        var header = new BmpInfoHeader { BitCount = 4, ClrUsed = 999 };
 
         Assert.Equal(16, header.CalculatePaletteSize());
     }
@@ -29,7 +29,7 @@ public sealed class BmpInfoHeaderTests
     [InlineData(32, 4, 4)]
     public void CalculatePaletteSize_OnlyCountsADeclaredPaletteAboveEightBits(ushort bitCount, int clrUsed, int expected)
     {
-        var header = new BMP_Info_Header { BitCount = bitCount, ClrUsed = clrUsed };
+        var header = new BmpInfoHeader { BitCount = bitCount, ClrUsed = clrUsed };
 
         Assert.Equal(expected, header.CalculatePaletteSize());
     }
@@ -40,7 +40,7 @@ public sealed class BmpInfoHeaderTests
     [InlineData(8, 1064)]
     public void CalculateDataOffset_SkipsHeaderAndFullPalette(ushort bitCount, int expected)
     {
-        var header = new BMP_Info_Header { Size = 40, BitCount = bitCount };
+        var header = new BmpInfoHeader { Size = 40, BitCount = bitCount };
 
         Assert.Equal(expected, header.CalculateDataOffset());
     }
@@ -54,7 +54,7 @@ public sealed class BmpInfoHeaderTests
     {
         // A palette shorter than the bit depth allows is legal, and the pixel data starts right
         // after it rather than after a full one.
-        var header = new BMP_Info_Header { Size = 40, BitCount = bitCount, ClrUsed = clrUsed };
+        var header = new BmpInfoHeader { Size = 40, BitCount = bitCount, ClrUsed = clrUsed };
 
         Assert.Equal(expected, header.CalculateDataOffset());
     }
@@ -64,7 +64,7 @@ public sealed class BmpInfoHeaderTests
     [InlineData(32)]
     public void CalculateDataOffset_SkipsNoPaletteForTrueColor(ushort bitCount)
     {
-        var header = new BMP_Info_Header { Size = 40, BitCount = bitCount };
+        var header = new BmpInfoHeader { Size = 40, BitCount = bitCount };
 
         Assert.Equal(40, header.CalculateDataOffset());
     }

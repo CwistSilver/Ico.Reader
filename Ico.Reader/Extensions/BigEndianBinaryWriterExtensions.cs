@@ -2,7 +2,7 @@
 
 namespace Ico.Reader.Extensions;
 
-public static class BinaryWriterExtensions
+public static class BigEndianBinaryWriterExtensions
 {
     public static void WriteUInt32BigEndian(this BinaryWriter writer, uint value)
     {

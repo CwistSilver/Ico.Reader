@@ -2,7 +2,7 @@
 
 namespace PeDecoder.Models;
 
-public class ResourceDataEntry
+internal sealed class ResourceDataEntry
 {
     public uint ID { get; set; }
     public uint DataRVA { get; set; }
@@ -10,13 +10,13 @@ public class ResourceDataEntry
     public uint Codepage { get; set; }
     public uint Reserved { get; set; }
 
-    public uint GetFileOffset(Stream stream, PE_Header peHeader)
-    {
-        var sectionHeades = SectionHeader.ReadFromStream(stream, peHeader);
-        var rsrcSection = peHeader.Optional!.ResourceTable!.FindFileSectionHeader(sectionHeades);
-
-        return rsrcSection.GetFileOffset(DataRVA);
-    }
+    /// <summary>
+    /// Resolves this entry's virtual address to a file offset within the resource section.
+    /// </summary>
+    /// <param name="resourceSection">
+    /// The section the resource tree was read from, available as <see cref="ResourceDirectory.Section"/>.
+    /// </param>
+    public uint GetFileOffset(SectionHeader resourceSection) => resourceSection.GetFileOffset(DataRVA);
 
     public static ResourceDataEntry ReadFromStream(Stream stream, long baseOffset, uint dataEntryOffset)
     {
@@ -36,7 +36,7 @@ public class ResourceDataEntry
         };
 
         if (dataEntry.Reserved != 0)
-            throw new Exception($"{nameof(ResourceDataEntry)}: Reserved is not 0");
+            throw new InvalidDataException($"{nameof(ResourceDataEntry)}: Reserved must be 0 but was {dataEntry.Reserved}.");
 
         return dataEntry;
     }

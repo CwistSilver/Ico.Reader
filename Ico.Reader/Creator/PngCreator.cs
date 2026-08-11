@@ -6,7 +6,7 @@ using Ico.Reader.Extensions;
 
 namespace Ico.Reader.Creator;
 
-public class PngCreator : IPngCreator
+public sealed class PngCreator : IPngCreator
 {
     private const uint cInit = 0xffffffff;
     private const string IDAT = "IDAT";
@@ -23,7 +23,7 @@ public class PngCreator : IPngCreator
         return c;
     })];
 
-    public byte[] CreatePng(ReadOnlySpan<byte> rgba, BMP_Info_Header header)
+    public byte[] CreatePng(ReadOnlySpan<byte> rgba, BmpInfoHeader header)
     {
         var width = header.Width;
         var height = header.Height / 2;

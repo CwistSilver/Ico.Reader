@@ -4,6 +4,7 @@ using Ico.Reader.Creator;
 using Ico.Reader.Data;
 
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
+
 /// <summary>
 /// A decoder that specializes in decoding Ico BMP (Bitmap) image data into a more usable format.
 /// </summary>
@@ -12,7 +13,7 @@ public sealed class BmpDecoder : IDecoder
     /// <summary>
     /// Specifies that this decoder supports the BMP image format.
     /// </summary>
-    public IcoImageFormat SupportedFormat => IcoImageFormat.BMP;
+    public IcoImageFormat SupportedFormat => IcoImageFormat.Bmp;
 
     private readonly Dictionary<int, IIcoBmpDecoder> _decoders = [];
     private readonly IPngCreator _pngCreator;
@@ -35,16 +36,7 @@ public sealed class BmpDecoder : IDecoder
     /// <summary>
     /// Initializes a new instance of the <see cref="BmpDecoder"/> class with default decoders for common BMP bit depths.
     /// </summary>
-    public BmpDecoder()
-    {
-        _pngCreator = new PngCreator();
-
-        _decoders.Add(1, new IcoBmp1Decoder());
-        _decoders.Add(4, new IcoBmp4Decoder());
-        _decoders.Add(8, new IcoBmp8Decoder());
-        _decoders.Add(24, new IcoBmp24Decoder());
-        _decoders.Add(32, new IcoBmp32Decoder());
-    }
+    public BmpDecoder() : this(IcoReaderDefaults.CreateBmpDecoders(), IcoReaderDefaults.CreatePngCreator()) { }
 
     /// <summary>
     /// Decodes BMP image data into an ARGB pixel array based on the image's bit depth.
@@ -90,9 +82,9 @@ public sealed class BmpDecoder : IDecoder
     /// <returns>True if the data is in a supported BMP format; otherwise, false.</returns>
     public bool IsSupported(ReadOnlySpan<byte> data) => MemoryMarshal.Read<int>(data.Slice(0, 4)) == 40;
 
-    private static BMP_Info_Header ReadInfoHeader(ReadOnlySpan<byte> src)
+    private static BmpInfoHeader ReadInfoHeader(ReadOnlySpan<byte> src)
     {
-        return new BMP_Info_Header
+        return new BmpInfoHeader
         {
             Size = MemoryMarshal.Read<int>(src.Slice(0, 4)),
             Width = MemoryMarshal.Read<int>(src.Slice(4, 4)),

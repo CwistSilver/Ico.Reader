@@ -1,4 +1,5 @@
-using Ico.Reader.Decoder;
+﻿using Ico.Reader.Decoder;
+using Ico.Reader.Export;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -73,7 +74,7 @@ public sealed class ConcurrencyTests
         var expected = SequentialBaseline(ico);
 
         var results = await Task.WhenAll(Enumerable.Range(0, Iterations)
-            .Select(i => Task.Run(() => ico.GetImageAsync(i % ico.ImageReferences.Count))));
+            .Select(i => Task.Run(() => ico.GetImageAsync(i % ico.ImageReferences.Count, TestContext.Current.CancellationToken))));
 
         for (var i = 0; i < Iterations; i++)
             Assert.Equal(expected[i % expected.Length], results[i]);
@@ -90,7 +91,7 @@ public sealed class ConcurrencyTests
             var index = i % ico.ImageReferences.Count;
             return i % 2 == 0
                 ? Task.Run(() => ico.GetImage(index))
-                : Task.Run(() => ico.GetImageAsync(index));
+                : Task.Run(() => ico.GetImageAsync(index, TestContext.Current.CancellationToken));
         });
 
         var results = await Task.WhenAll(tasks);
@@ -240,7 +241,7 @@ public sealed class ConcurrencyTests
 
         try
         {
-            await pe.SaveAllImagesToDirectory(outputDirectory);
+            await new IcoExporter().SaveAllImagesToDirectoryAsync(pe, outputDirectory, TestContext.Current.CancellationToken);
 
             var root = Path.Combine(outputDirectory, "Ico.Reader.Test.PeFixture");
             var written = Directory.GetFiles(root);

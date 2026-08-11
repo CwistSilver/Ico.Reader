@@ -41,12 +41,68 @@ public sealed class IcoReader
         var icoSource = new PathSource(filePath);
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        var IcoData = ReadFromStream(stream, icoSource);
-        if (IcoData is null)
+        var icoData = ReadFromStream(stream, icoSource);
+        if (icoData is null)
             return null;
 
-        IcoData.Name = Path.GetFileNameWithoutExtension(filePath);
-        return IcoData;
+        icoData.Name = Path.GetFileNameWithoutExtension(filePath);
+        return icoData;
+    }
+
+    /// <summary>
+    /// Reads ico data from a specified file path, reading the file asynchronously.
+    /// </summary>
+    /// <remarks>
+    /// Parsing itself is a series of small seeks and so runs synchronously once the file is in
+    /// memory. That buffer is released as soon as parsing finishes; individual images are still read
+    /// lazily from the file, exactly as with <see cref="Read(string)"/>.
+    /// </remarks>
+    /// <param name="filePath">The path to the file containing the ico data.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>An IcoData object containing the read ico data, or null if the file does not exist or cannot be read.</returns>
+    public async Task<IcoData?> ReadAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(filePath))
+            return null;
+
+        var icoSource = new PathSource(filePath);
+        var buffer = await ReadAllBytesAsync(filePath, cancellationToken).ConfigureAwait(false);
+
+        using var stream = new MemoryStream(buffer, writable: false);
+
+        var icoData = ReadFromStream(stream, icoSource);
+        if (icoData is null)
+            return null;
+
+        icoData.Name = Path.GetFileNameWithoutExtension(filePath);
+        return icoData;
+    }
+
+    /// <summary>
+    /// Reads ico data from a stream, copying it asynchronously.
+    /// </summary>
+    /// <param name="stream">The stream containing the ico data.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
+    public async Task<IcoData?> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        if (stream is null)
+            throw new ArgumentNullException(nameof(stream));
+
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+
+        return Read(buffer.ToArray());
+    }
+
+    private static async Task<byte[]> ReadAllBytesAsync(string filePath, CancellationToken cancellationToken)
+    {
+        using var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+        using var buffer = new MemoryStream();
+
+        await file.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+
+        return buffer.ToArray();
     }
 
     /// <summary>
@@ -58,12 +114,7 @@ public sealed class IcoReader
     {
         MemoryStream stream = new(data, false);
         var icoSource = new MemorySource(data);
-
-        var IcoData = ReadFromStream(stream, icoSource);
-        if (IcoData is null)
-            return null;
-
-        return IcoData;
+        return ReadFromStream(stream, icoSource);
     }
 
     /// <summary>
@@ -81,11 +132,7 @@ public sealed class IcoReader
         else
             dataSource = new StreamSource(stream);
 
-        var IcoData = ReadFromStream(stream, dataSource);
-        if (IcoData is null)
-            return null;
-
-        return IcoData;
+        return ReadFromStream(stream, dataSource);
     }
 
     /// <summary>
@@ -128,19 +175,15 @@ public sealed class IcoReader
 
     private IcoData? ReadFromIco(Stream stream, IDataSource dataSource)
     {
+        // The stream may belong to the caller, so an unreadable file is reported by returning null
+        // and never by closing it.
         var header = IcoHeader.ReadFromStream(stream);
         var decodedicoResult = GetDecodedIcoResult(header);
         if (decodedicoResult is null)
-        {
-            stream.Dispose();
             return null;
-        }
 
         if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0)
-        {
-            stream.Dispose();
             return null;
-        }
 
         decodedicoResult.IcoGroups[0].DirectoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromStream(stream, decodedicoResult.IcoGroups[0].Header!);
         decodedicoResult.References = new List<ImageReference>(decodedicoResult.IcoGroups[0].DirectoryEntries!.Length);

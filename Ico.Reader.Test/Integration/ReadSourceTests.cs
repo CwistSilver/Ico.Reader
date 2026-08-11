@@ -1,4 +1,4 @@
-namespace Ico.Reader.Test.Integration;
+﻿namespace Ico.Reader.Test.Integration;
 
 /// <summary>
 /// The reader accepts a path, a byte array or a stream. All three have to yield the same images.
@@ -63,7 +63,7 @@ public sealed class ReadSourceTests
         Assert.NotNull(ico);
 
         foreach (var reference in ico.ImageReferences)
-            Assert.Equal(ico.GetImage(reference), await ico.GetImageAsync(reference));
+            Assert.Equal(ico.GetImage(reference), await ico.GetImageAsync(reference, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class ReadSourceTests
         var ico = _reader.Read(TestFiles.Ico(IcoFixtures.PngEmbedded));
         Assert.NotNull(ico);
 
-        Assert.Equal(ico.GetImage(0), await ico.GetImageAsync(0));
+        Assert.Equal(ico.GetImage(0), await ico.GetImageAsync(0, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -125,6 +125,6 @@ public sealed class ReadSourceTests
 
         Assert.NotNull(ico);
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => ico.GetImageAsync(0));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => ico.GetImageAsync(0, TestContext.Current.CancellationToken));
     }
 }

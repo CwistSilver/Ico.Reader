@@ -1,6 +1,7 @@
 ﻿namespace PeDecoder.Models;
+
 // https://learn.microsoft.com/en-us/windows/win32/menurc/resource-types
-public enum ResourceType : uint
+internal enum ResourceType : uint
 {
     RT_CURSOR = 1,
     RT_BITMAP = 2,

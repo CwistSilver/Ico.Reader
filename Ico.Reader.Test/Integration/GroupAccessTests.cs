@@ -1,4 +1,4 @@
-namespace Ico.Reader.Test.Integration;
+﻿namespace Ico.Reader.Test.Integration;
 
 public sealed class GroupAccessTests
 {
@@ -107,7 +107,7 @@ public sealed class GroupAccessTests
     {
         var ico = Read();
 
-        Assert.Equal(ico.GetImage(1), await ico.GetImageAsync(ico.Groups[0], 1));
-        Assert.Equal(ico.GetImage(1), await ico.GetImageAsync("1", 1, IcoType.Icon));
+        Assert.Equal(ico.GetImage(1), await ico.GetImageAsync(ico.Groups[0], 1, TestContext.Current.CancellationToken));
+        Assert.Equal(ico.GetImage(1), await ico.GetImageAsync("1", 1, IcoType.Icon, TestContext.Current.CancellationToken));
     }
 }

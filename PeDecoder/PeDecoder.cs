@@ -2,28 +2,24 @@
 
 namespace PeDecoder;
 
-public interface IPeDecoder
+internal interface IPeDecoder
 {
-    MZ_Header DecodeMZ(Stream stream);
-    PE_Header DecodePE(Stream stream);
-    ResourceDirectory? DecodeResourceDirectory(Stream stream, PE_Header peHeader);
-    bool IsPeFormat(MZ_Header mZ_Header);
+    MzHeader DecodeMZ(Stream stream);
+    PeHeader DecodePE(Stream stream);
+    ResourceDirectory? DecodeResourceDirectory(Stream stream, PeHeader peHeader);
+    bool IsPeFormat(MzHeader mzHeader);
     bool IsPeFormat(Stream stream);
 }
 
-public class PeDecoder : IPeDecoder
+internal sealed class PeDecoder : IPeDecoder
 {
-    public MZ_Header DecodeMZ(Stream stream) => MZ_Header.ReadFromStream(stream);
-    public bool IsPeFormat(Stream stream) => IsPeFormat(MZ_Header.ReadFromStream(stream));
-    public bool IsPeFormat(MZ_Header mZ_Header)
-    {
-        if (mZ_Header.Signature[0] != 'M' || mZ_Header.Signature[1] != 'Z')
-            return false;
+    public MzHeader DecodeMZ(Stream stream) => MzHeader.ReadFromStream(stream);
 
-        return true;
-    }
+    public bool IsPeFormat(Stream stream) => IsPeFormat(MzHeader.ReadFromStream(stream));
 
-    public PE_Header DecodePE(Stream stream) => PE_Header.ReadFromStream(stream);
-    public ResourceDirectory? DecodeResourceDirectory(Stream stream, PE_Header peHeader) => ResourceDirectory.ReadFromStream(stream, peHeader);
+    public bool IsPeFormat(MzHeader mzHeader) => mzHeader.HasMzSignature;
+
+    public PeHeader DecodePE(Stream stream) => PeHeader.ReadFromStream(stream);
+    public ResourceDirectory? DecodeResourceDirectory(Stream stream, PeHeader peHeader) => ResourceDirectory.ReadFromStream(stream, peHeader);
 }
 

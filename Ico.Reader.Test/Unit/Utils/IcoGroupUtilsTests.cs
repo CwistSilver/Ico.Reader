@@ -1,4 +1,4 @@
-using Ico.Reader.Utils;
+﻿using Ico.Reader.Utils;
 
 namespace Ico.Reader.Test.Unit.Utils;
 
@@ -102,21 +102,6 @@ public sealed class IcoGroupUtilsTests
     }
 
     [Fact]
-    public void CursorGroup_ReadEntriesFromEXEStream_UsesTheSameWordLayout()
-    {
-        var group = new CursorGroup();
-        var stream = new MemoryStream(ExeCursorEntries((48, 48, 32, 9644, 12)));
-        var header = new IcoHeader { ImageType = 2, ImageCount = 1 };
-
-        var entry = Assert.Single(group.ReadEntriesFromEXEStream(stream, header));
-
-        Assert.Equal(48, entry.Width);
-        Assert.Equal(48, entry.Height);
-        Assert.Equal(32, entry.ColorDepth);
-        Assert.Equal(12u, entry.ImageOffset);
-    }
-
-    [Fact]
     public void ReadFromEXEStream_ThrowsForAnUnknownImageType()
     {
         var header = new IcoHeader { ImageType = 9, ImageCount = 1 };
@@ -133,33 +118,7 @@ public sealed class IcoGroupUtilsTests
         Assert.Equal(ushort.MaxValue, IcoGroupUtils.ReadFromEXEStream(stream, header).Length);
     }
 
-    [Fact]
-    public void IconGroup_ReadEntriesFromEXEStream_RejectsCursorHeaders()
-    {
-        var group = new IconGroup();
-        var header = new IcoHeader { ImageType = 2, ImageCount = 1 };
 
-        Assert.Throws<ArgumentException>(() => group.ReadEntriesFromEXEStream(new MemoryStream(new byte[14]), header));
-    }
-
-    [Fact]
-    public void CursorGroup_ReadEntriesFromEXEStream_RejectsIconHeaders()
-    {
-        var group = new CursorGroup();
-        var header = new IcoHeader { ImageType = 1, ImageCount = 1 };
-
-        Assert.Throws<ArgumentException>(() => group.ReadEntriesFromEXEStream(new MemoryStream(new byte[14]), header));
-    }
-
-    [Fact]
-    public void IconGroup_ReadEntriesFromEXEStream_DoesNotExhaustTheStackForALargeDirectory()
-    {
-        var group = new IconGroup();
-        var header = new IcoHeader { ImageType = 1, ImageCount = ushort.MaxValue };
-        var stream = new MemoryStream(new byte[ushort.MaxValue * 14]);
-
-        Assert.Equal(ushort.MaxValue, group.ReadEntriesFromEXEStream(stream, header).Length);
-    }
 
     [Fact]
     public void Size_ReflectsTheEntryCount()

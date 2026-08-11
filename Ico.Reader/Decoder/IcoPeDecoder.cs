@@ -1,13 +1,15 @@
 ﻿using System.Runtime.InteropServices;
 
 using Ico.Reader.Data;
+using Ico.Reader.Utils;
 
 using PeDecoder;
 using PeDecoder.Models;
 
 namespace Ico.Reader.Decoder;
+
 /// <inheritdoc cref="IIcoPeDecoder"/>
-public sealed class IcoPeDecoder : IIcoPeDecoder
+internal sealed class IcoPeDecoder : IIcoPeDecoder
 {
     private readonly IPeDecoder _peDecoder;
 
@@ -32,13 +34,18 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
             OriginFileType = peHeader.Characteristics.HasFlag(Characteristics.ImageFileDLL) ? IcoOriginFileType.Dll : IcoOriginFileType.Executable
         };
 
-        AddIcoGroups(decodedIcoResult, readResourceDirectory, peHeader, stream, icoDecoder);
-        AddCurGroups(decodedIcoResult, readResourceDirectory, peHeader, stream, icoDecoder);
+        // The section is resolved once here; every entry offset below is derived from it rather
+        // than by re-reading the section table.
+        var resourceSection = readResourceDirectory.Section
+            ?? throw new InvalidDataException("The resource directory does not carry the section it was read from.");
+
+        AddIcoGroups(decodedIcoResult, readResourceDirectory, resourceSection, stream, icoDecoder);
+        AddCurGroups(decodedIcoResult, readResourceDirectory, resourceSection, stream, icoDecoder);
 
         return decodedIcoResult;
     }
 
-    private void AddIcoGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, PE_Header peHeader, Stream stream, IIcoDecoder icoDecoder)
+    private void AddIcoGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, SectionHeader resourceSection, Stream stream, IIcoDecoder icoDecoder)
     {
         var icoResource = readResourceDirectory.GetResources(ResourceType.RT_ICON.ToString());
         if (icoResource is null)
@@ -49,7 +56,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
         for (var i = 0; i < icoResource.Length; i++)
         {
             var icoDataEntry = icoResource[i];
-            var fileOffset = icoDataEntry.GetFileOffset(stream, peHeader);
+            var fileOffset = icoDataEntry.GetFileOffset(resourceSection);
             var reference = ImageReference.FromStream(stream, fileOffset, icoDataEntry.Size, icoDecoder);
             if (reference is null)
                 return;
@@ -73,11 +80,11 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
                 Name = icoResourceGroupDirectory.Subdirectories[i].Name
             };
 
-            var fileOffset = icoResourceGroup[i].GetFileOffset(stream, peHeader);
+            var fileOffset = icoResourceGroup[i].GetFileOffset(resourceSection);
             icoGroup.Header = IcoHeader.ReadFromStream(stream, fileOffset);
 
             stream.Position = fileOffset + 6;
-            var directoryEntries = icoGroup.ReadEntriesFromEXEStream(stream, icoGroup.Header).ToList();
+            var directoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(stream, icoGroup.Header).ToList();
 
             for (var x = 0; x < directoryEntries.Count; x++)
             {
@@ -96,7 +103,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
         }
     }
 
-    private void AddCurGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, PE_Header peHeader, Stream stream, IIcoDecoder icoDecoder)
+    private void AddCurGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, SectionHeader resourceSection, Stream stream, IIcoDecoder icoDecoder)
     {
         var curResource = readResourceDirectory.GetResources(ResourceType.RT_CURSOR.ToString());
         if (curResource is null)
@@ -107,7 +114,7 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
         for (var i = 0; i < curResource.Length; i++)
         {
             var curDataEntry = curResource[i];
-            var fileOffset = curDataEntry.GetFileOffset(stream, peHeader);
+            var fileOffset = curDataEntry.GetFileOffset(resourceSection);
 
             stream.Position = fileOffset;
             Span<byte> hotspotData = stackalloc byte[4];
@@ -146,10 +153,10 @@ public sealed class IcoPeDecoder : IIcoPeDecoder
                 Name = curResourceGroupDirectory.Subdirectories[i].Name
             };
 
-            var fileOffset = curResourceGroup[i].GetFileOffset(stream, peHeader);
+            var fileOffset = curResourceGroup[i].GetFileOffset(resourceSection);
             curGroup.Header = IcoHeader.ReadFromStream(stream, fileOffset);
             stream.Position = fileOffset + 6;
-            var directoryEntries = curGroup.ReadEntriesFromEXEStream(stream, curGroup.Header).ToList();
+            var directoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<CursorDirectoryEntry>(stream, curGroup.Header).ToList();
 
             for (var x = 0; x < directoryEntries.Count; x++)
             {

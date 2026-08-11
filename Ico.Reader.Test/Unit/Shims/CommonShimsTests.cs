@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace Ico.Reader.Test.Unit.Shims;
 
@@ -131,32 +131,26 @@ public sealed class CommonShimsTests
         Assert.Equal<byte[]>([5, 6, 7], stream.ToArray());
     }
 
-    [Fact]
-    public void SpanToStringFast_ReturnsEmptyForAnEmptySpan()
-        => Assert.Same(string.Empty, CommonShims.SpanExtensions.ToStringFast(ReadOnlySpan<char>.Empty));
-
-    [Fact]
-    public void SpanToStringFast_CopiesOnlyTheSpannedCharacters()
-    {
-        var span = "abcdef".AsSpan(1, 3);
-
-        Assert.Equal("bcd", CommonShims.SpanExtensions.ToStringFast(span));
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData("a")]
     [InlineData(".text\0\0\0")]
     [InlineData("\0\0\0\0\0\0\0\0")]
     [InlineData(".rdata\0\0")]
-    public void SpanToStringFast_MatchesTheStringConstructorItStandsInFor(string value)
+    public void SpanToString_ReturnsTheSpannedCharacters(string value)
     {
-        // PeDecoder reads a section name through ToStringFast on netstandard2.0 and through
-        // new string(span) everywhere else, so the two must agree — including on embedded nulls.
+        // PeDecoder reads a null-padded section name straight off a Span<char>. This built-in
+        // conversion replaced an unsafe ToStringFast shim that did the same thing.
         Span<char> chars = value.ToCharArray();
 
-        Assert.Equal(new string(chars), CommonShims.SpanExtensions.ToStringFast(chars));
-        Assert.Equal(new string(chars).Trim('\0'), CommonShims.SpanExtensions.ToStringFast(chars).Trim('\0'));
+        Assert.Equal(value, chars.ToString());
+        Assert.Equal(value.TrimEnd('\0'), chars.ToString().Trim('\0'));
+    }
+
+    [Fact]
+    public void SpanToString_CopiesOnlyTheSpannedCharacters()
+    {
+        Assert.Equal("bcd", "abcdef".AsSpan(1, 3).ToString());
     }
 
     [Fact]

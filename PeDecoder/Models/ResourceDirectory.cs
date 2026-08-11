@@ -2,8 +2,19 @@
 
 namespace PeDecoder.Models;
 
-public class ResourceDirectory
+internal sealed class ResourceDirectory
 {
+    internal const int HeaderSize = 16;
+
+    /// <summary>
+    /// The resource tree nests type, then name, then language, so a well-formed file never goes
+    /// deeper than a handful of levels. The limit stops a malformed or hostile file from recursing
+    /// until the stack gives out.
+    /// </summary>
+    private const int MaxDepth = 32;
+
+    private const string RootName = "Root";
+
     public string Name { get; set; } = string.Empty;
     public int Level { get; set; }
     public uint Characteristics { get; set; }
@@ -16,6 +27,12 @@ public class ResourceDirectory
     public List<ResourceDirectory> Subdirectories { get; set; } = [];
     public List<ResourceDataEntry> DataEntries { get; set; } = [];
 
+    /// <summary>
+    /// The section the resource tree was read from, kept so that resolving a data entry to a file
+    /// offset does not have to re-read the section table. Only set on the root directory.
+    /// </summary>
+    public SectionHeader? Section { get; set; }
+
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
 
     public ResourceDirectory? GetDirectory(string directoryName)
@@ -23,54 +40,49 @@ public class ResourceDirectory
         if (Level != 1)
             return null;
 
-        var foundDirectory = Subdirectories.FirstOrDefault(x => x.Name.ToLower().Contains(directoryName.ToLower()));
-        if (foundDirectory is null)
-            return null;
-
-        return foundDirectory;
+        return Subdirectories.FirstOrDefault(x => string.Equals(x.Name, directoryName, StringComparison.OrdinalIgnoreCase));
     }
 
     public ResourceDataEntry[]? GetResources(string directoryName)
     {
-        if (Level != 1)
-            return null;
-
-        var foundDirectory = Subdirectories.FirstOrDefault(x => x.Name.ToLower().Contains(directoryName.ToLower()));
+        var foundDirectory = GetDirectory(directoryName);
         if (foundDirectory is null)
             return null;
 
-        var dataEntries = new ResourceDataEntry[foundDirectory.Subdirectories.Count];
-        for (int i = 0; i < foundDirectory.Subdirectories.Count; i++)
-            dataEntries[i] = foundDirectory.Subdirectories[i].DataEntries[0];
-
-        return dataEntries;
+        // A language subdirectory always carries exactly one data entry, but a malformed file can
+        // leave one empty, so those are skipped rather than indexed into blindly.
+        return [.. foundDirectory.Subdirectories.Where(x => x.DataEntries.Count > 0).Select(x => x.DataEntries[0])];
     }
 
-    public static ResourceDirectory? ReadFromStream(Stream stream, PE_Header peHeader)
+    public static ResourceDirectory? ReadFromStream(Stream stream, PeHeader peHeader)
     {
         if (peHeader.Optional is null || peHeader.Optional.ResourceTable is null)
             return null;
 
-        var sectionHeades = SectionHeader.ReadFromStream(stream, peHeader);
+        var sectionHeaders = SectionHeader.ReadFromStream(stream, peHeader);
 
-        var rsrcSection = peHeader.Optional.ResourceTable.FindFileSectionHeader(sectionHeades);
+        var rsrcSection = peHeader.Optional.ResourceTable.FindFileSectionHeader(sectionHeaders);
         long resourceTableOffset = rsrcSection.GetFileOffset(peHeader.Optional.ResourceTable.VirtualAddress);
 
-        var rootResourceDirectory = ReadResourceDirectory(stream, resourceTableOffset, rsrcSection);
-        rootResourceDirectory.Name = "Root";
+        var rootResourceDirectory = ReadResourceDirectory(stream, resourceTableOffset, rsrcSection, [], 1);
+        rootResourceDirectory.Name = RootName;
+        rootResourceDirectory.Section = rsrcSection;
 
         return rootResourceDirectory;
     }
 
-    private static ResourceDirectory ReadResourceDirectory(Stream stream, long virtualAddress, SectionHeader rsrcSection, int level = 1)
+    private static ResourceDirectory ReadResourceDirectory(Stream stream, long virtualAddress, SectionHeader rsrcSection, HashSet<long> visited, int level)
     {
         stream.Position = virtualAddress;
 
         var resourceDirectory = ReadResourceDirectoryBase(stream, virtualAddress, level);
+        if (level >= MaxDepth || !visited.Add(virtualAddress))
+            return resourceDirectory;
+
         var resourceDirectoryEntries = ResourceDirectoryEntry.ReadFromStream(stream, resourceDirectory, virtualAddress);
 
         foreach (var entry in resourceDirectoryEntries)
-            ProcessResourceDirectoryEntry(stream, resourceDirectory, entry, rsrcSection);
+            ProcessResourceDirectoryEntry(stream, resourceDirectory, entry, rsrcSection, visited);
 
         return resourceDirectory;
     }
@@ -85,7 +97,7 @@ public class ResourceDirectory
         var resourceDirectory = new ResourceDirectory
         {
             Characteristics = MemoryMarshal.Read<uint>(resourceDirectorySpan.Slice(0, 4)),
-            TimeDateStamp = new DateTime(1970, 1, 1).AddSeconds(MemoryMarshal.Read<uint>(resourceDirectorySpan.Slice(4, 4))),
+            TimeDateStamp = DateTimeOffset.FromUnixTimeSeconds(MemoryMarshal.Read<uint>(resourceDirectorySpan.Slice(4, 4))).UtcDateTime,
             MajorVersion = MemoryMarshal.Read<ushort>(resourceDirectorySpan.Slice(8, 2)),
             MinorVersion = MemoryMarshal.Read<ushort>(resourceDirectorySpan.Slice(10, 2)),
             NumberOfNamedEntries = MemoryMarshal.Read<ushort>(resourceDirectorySpan.Slice(12, 2)),
@@ -96,13 +108,12 @@ public class ResourceDirectory
         return resourceDirectory;
     }
 
-    private static void ProcessResourceDirectoryEntry(Stream stream, ResourceDirectory directory, ResourceDirectoryEntry entry, SectionHeader rsrcSection)
+    private static void ProcessResourceDirectoryEntry(Stream stream, ResourceDirectory directory, ResourceDirectoryEntry entry, SectionHeader rsrcSection, HashSet<long> visited)
     {
-
         if (entry.SubdirectoryOffset != 0)
         {
             var newAddress = rsrcSection.PointerToRawData + entry.SubdirectoryOffset;
-            var subResourceDirectory = ReadResourceDirectory(stream, newAddress, rsrcSection, directory.Level + 1);
+            var subResourceDirectory = ReadResourceDirectory(stream, newAddress, rsrcSection, visited, directory.Level + 1);
             SetName(stream, subResourceDirectory, entry, rsrcSection);
 
             directory.Subdirectories.Add(subResourceDirectory);

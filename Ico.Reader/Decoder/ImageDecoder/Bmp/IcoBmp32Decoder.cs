@@ -6,7 +6,7 @@ public sealed class IcoBmp32Decoder : IIcoBmpDecoder
 {
     public byte BitCountSupported => 32;
 
-    public byte[] DecodeIcoBmpToRgba(ReadOnlySpan<byte> data, BMP_Info_Header header)
+    public byte[] DecodeIcoBmpToRgba(ReadOnlySpan<byte> data, BmpInfoHeader header)
     {
         var width = header.Width;
         var height = header.Height / 2;

@@ -2,7 +2,7 @@
 
 namespace PeDecoder.Models;
 
-public class ImageDataDirectory
+internal sealed class ImageDataDirectory
 {
     public uint VirtualAddress { get; set; }
     public uint Size { get; set; }
@@ -24,6 +24,6 @@ public class ImageDataDirectory
                 return section;
         }
 
-        throw new Exception("VirtualAddress is outside the range of the section headers");
+        throw new InvalidDataException("VirtualAddress is outside the range of the section headers.");
     }
 }

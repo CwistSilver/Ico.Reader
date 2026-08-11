@@ -75,9 +75,25 @@ public sealed class ImageReference
     /// <returns>A byte array containing the image data.</returns>
     public byte[] GetImageData(Stream stream, IIcoDecoder icoDecoder)
     {
+        var data = new byte[(int)Size];
         stream.Position = Offset;
-        Span<byte> data = new byte[(int)Size];
-        stream.Read(data);
+        stream.Read(data, 0, data.Length);
+
+        return icoDecoder.GetImageData(data, Format);
+    }
+
+    /// <summary>
+    /// Extracts the image data for this reference from a stream asynchronously.
+    /// </summary>
+    /// <param name="stream">The stream containing the ico data.</param>
+    /// <param name="icoDecoder">The decoder to use for extracting the image data.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>A byte array containing the image data.</returns>
+    public async Task<byte[]> GetImageDataAsync(Stream stream, IIcoDecoder icoDecoder, CancellationToken cancellationToken = default)
+    {
+        var data = new byte[(int)Size];
+        stream.Position = Offset;
+        await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
 
         return icoDecoder.GetImageData(data, Format);
     }

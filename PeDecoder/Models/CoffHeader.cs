@@ -1,11 +1,13 @@
 ﻿using System.Runtime.InteropServices;
 
+using PeDecoder.Utils;
+
 namespace PeDecoder.Models;
 
 /// <summary>
 /// See <see href="https://learn.microsoft.com/de-de/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only">Optional Header Windows-Specific Fields (Image Only)</see>.
 /// </summary>
-public class COFF_Header
+internal sealed class CoffHeader
 {
     public ulong ImageBase { get; set; }
     public uint SectionAlignment { get; set; }
@@ -29,20 +31,21 @@ public class COFF_Header
     public uint LoaderFlags { get; set; }
     public uint NumberOfRvaAndSizes { get; set; }
 
-    public static COFF_Header? ReadCOFF(Stream stream, PE_Header header)
+    public static CoffHeader? ReadCOFF(Stream stream, PeHeader header)
     {
         if (header.Optional is null || header.SizeOfOptionalHeader == 0)
             return null;
 
-        stream.Position = header.HeaderOffset + PE_Header.PeHeaderSize;
-        Span<byte> data = stackalloc byte[header.SizeOfOptionalHeader];
-        stream.Read(data);
+        stream.Position = header.HeaderOffset + PeHeader.PeHeaderSize;
 
-        ReadOnlySpan<byte> optionalHeaderSpan = data;
+        return PooledStreamReader.Read(stream, header.SizeOfOptionalHeader, optionalHeaderSpan => ReadCoffFields(optionalHeaderSpan, header));
+    }
 
-        var coff = new COFF_Header();
+    private static CoffHeader ReadCoffFields(ReadOnlySpan<byte> optionalHeaderSpan, PeHeader header)
+    {
+        var coff = new CoffHeader();
 
-        if (header.Optional.Magic == MagicNumber.PE32)
+        if (header.Optional!.Magic == MagicNumber.PE32)
             coff.ImageBase = MemoryMarshal.Read<uint>(optionalHeaderSpan.Slice(28, 4));
         else
             coff.ImageBase = MemoryMarshal.Read<ulong>(optionalHeaderSpan.Slice(24, 8));

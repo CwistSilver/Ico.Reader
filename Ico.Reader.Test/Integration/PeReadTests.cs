@@ -1,4 +1,4 @@
-namespace Ico.Reader.Test.Integration;
+﻿namespace Ico.Reader.Test.Integration;
 
 /// <summary>
 /// Reads icons and cursors back out of a real PE file. The fixture assembly embeds four
@@ -205,7 +205,7 @@ public sealed class PeReadTests
     {
         var ico = Read();
 
-        var reference = ico.GetImageReferences("4", IcoType.Icon).Single(x => x.Format == IcoImageFormat.PNG);
+        var reference = ico.GetImageReferences("4", IcoType.Icon).Single(x => x.Format == IcoImageFormat.Png);
 
         Assert.Equal(256, reference.Width);
         Assert.Equal(File.ReadAllBytes(TestFiles.SamplePng), ico.GetImage(reference));
@@ -237,6 +237,6 @@ public sealed class PeReadTests
         var ico = Read();
 
         foreach (var reference in ico.ImageReferences)
-            Assert.Equal(ico.GetImage(reference), await ico.GetImageAsync(reference));
+            Assert.Equal(ico.GetImage(reference), await ico.GetImageAsync(reference, TestContext.Current.CancellationToken));
     }
 }

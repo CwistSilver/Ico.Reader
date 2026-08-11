@@ -21,7 +21,7 @@ public sealed class PngDecoderTests
     }
 
     [Fact]
-    public void SupportedFormat_IsPng() => Assert.Equal(IcoImageFormat.PNG, _decoder.SupportedFormat);
+    public void SupportedFormat_IsPng() => Assert.Equal(IcoImageFormat.Png, _decoder.SupportedFormat);
 
     [Fact]
     public void IsSupported_AcceptsThePngSignature() => Assert.True(_decoder.IsSupported(Ihdr(16, 16, 8, 6)));
@@ -54,7 +54,7 @@ public sealed class PngDecoderTests
         Assert.NotNull(metadata);
         Assert.Equal(300, metadata.Width);
         Assert.Equal(150, metadata.Height);
-        Assert.Equal(IcoImageFormat.PNG, metadata.Format);
+        Assert.Equal(IcoImageFormat.Png, metadata.Format);
     }
 
     [Theory]

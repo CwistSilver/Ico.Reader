@@ -1,4 +1,4 @@
-namespace Ico.Reader.Test.Integration;
+﻿namespace Ico.Reader.Test.Integration;
 
 public sealed class CurReadTests
 {
@@ -117,7 +117,7 @@ public sealed class CurReadTests
         var cur = Read(CurFixtures.PngEmbedded);
 
         var reference = Assert.Single(cur.ImageReferences);
-        Assert.Equal(IcoImageFormat.PNG, reference.Format);
+        Assert.Equal(IcoImageFormat.Png, reference.Format);
         Assert.Equal(IcoType.Cursor, reference.IcoType);
         Assert.Equal(256, reference.Width);
         Assert.Equal(128, reference.HotspotX);
@@ -165,7 +165,7 @@ public sealed class CurReadTests
         var cur = Read("cursor_multi.cur");
 
         foreach (var reference in cur.ImageReferences)
-            Assert.Equal(cur.GetImage(reference), await cur.GetImageAsync(reference));
+            Assert.Equal(cur.GetImage(reference), await cur.GetImageAsync(reference, TestContext.Current.CancellationToken));
     }
 
     [Fact]

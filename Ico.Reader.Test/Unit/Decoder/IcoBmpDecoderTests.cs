@@ -14,7 +14,7 @@ public sealed class IcoBmpDecoderTests
     private static readonly Rgb _black = new(0, 0, 0);
     private static readonly Rgb _white = new(255, 255, 255);
 
-    private static BMP_Info_Header Header(int width, int height, ushort bitCount, int paletteLength) => new()
+    private static BmpInfoHeader Header(int width, int height, ushort bitCount, int paletteLength) => new()
     {
         Size = 40,
         Width = width,

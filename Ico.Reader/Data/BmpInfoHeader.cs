@@ -1,8 +1,9 @@
 ﻿namespace Ico.Reader.Data;
+
 /// <summary>
 /// Represents the BMP information header.
 /// </summary>
-public class BMP_Info_Header
+public sealed class BmpInfoHeader
 {
     /// <summary>
     /// The size of this header in bytes.

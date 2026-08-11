@@ -1,8 +1,11 @@
+﻿using Ico.Reader.Export;
+
 namespace Ico.Reader.Test.Integration;
 
 public sealed class SaveTests : IDisposable
 {
     private readonly IcoReader _reader = new();
+    private readonly IIcoExporter _exporter = new IcoExporter();
     private readonly string _outputDirectory = Path.Combine(Path.GetTempPath(), $"ico-reader-tests-{Guid.NewGuid():N}");
 
     public SaveTests() => Directory.CreateDirectory(_outputDirectory);
@@ -26,7 +29,7 @@ public sealed class SaveTests : IDisposable
         var ico = Read();
         var path = Path.Combine(_outputDirectory, "image.png");
 
-        await ico.SaveImageAsync(0, path);
+        await _exporter.SaveImageAsync(ico, ico.ImageReferences[0], path, TestContext.Current.CancellationToken);
 
         Assert.Equal(ico.GetImage(0), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
@@ -40,7 +43,7 @@ public sealed class SaveTests : IDisposable
         var path = Path.Combine(_outputDirectory, "image.png");
         await File.WriteAllBytesAsync(path, [.. Enumerable.Repeat((byte)0xAB, 10_000)], TestContext.Current.CancellationToken);
 
-        await ico.SaveImageAsync(0, path);
+        await _exporter.SaveImageAsync(ico, ico.ImageReferences[0], path, TestContext.Current.CancellationToken);
 
         Assert.Equal(ico.GetImage(0), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
@@ -51,7 +54,7 @@ public sealed class SaveTests : IDisposable
         var ico = Read();
         var path = Path.Combine(_outputDirectory, "group-image.png");
 
-        await ico.SaveImageAsync(ico.Groups[0], 1, path);
+        await _exporter.SaveImageAsync(ico, ico.GetImageReference(ico.Groups[0], 1), path, TestContext.Current.CancellationToken);
 
         Assert.Equal(ico.GetImage(1), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
@@ -61,7 +64,7 @@ public sealed class SaveTests : IDisposable
     {
         var ico = Read();
 
-        await ico.SaveGroupToDirectory(ico.Groups[0], _outputDirectory);
+        await _exporter.SaveGroupToDirectoryAsync(ico, ico.Groups[0], _outputDirectory, TestContext.Current.CancellationToken);
 
         var groupDirectory = Path.Combine(_outputDirectory, "Icon", "Group 1");
         var files = Directory.GetFiles(groupDirectory);
@@ -74,7 +77,7 @@ public sealed class SaveTests : IDisposable
     {
         var ico = Read();
 
-        await ico.SaveAllGroupsToDirectory(_outputDirectory);
+        await _exporter.SaveAllGroupsToDirectoryAsync(ico, _outputDirectory, TestContext.Current.CancellationToken);
 
         var groupDirectory = Path.Combine(_outputDirectory, "icon_multi", "Icon", "Group 1");
         Assert.True(Directory.Exists(groupDirectory));
@@ -86,7 +89,7 @@ public sealed class SaveTests : IDisposable
     {
         var ico = Read();
 
-        await ico.SaveAllImagesToDirectory(_outputDirectory);
+        await _exporter.SaveAllImagesToDirectoryAsync(ico, _outputDirectory, TestContext.Current.CancellationToken);
 
         var files = Directory.GetFiles(Path.Combine(_outputDirectory, "icon_multi")).Select(Path.GetFileName).ToArray();
         Assert.Equal(3, files.Length);
@@ -101,7 +104,7 @@ public sealed class SaveTests : IDisposable
         var ico = _reader.Read(TestFiles.IcoBytes("icon_32_8bpp.ico"));
         Assert.NotNull(ico);
 
-        await ico.SaveAllImagesToDirectory(_outputDirectory);
+        await _exporter.SaveAllImagesToDirectoryAsync(ico, _outputDirectory, TestContext.Current.CancellationToken);
 
         var root = Directory.GetDirectories(_outputDirectory).Single();
         var file = Path.GetFileName(Directory.GetFiles(root).Single());
@@ -116,7 +119,7 @@ public sealed class SaveTests : IDisposable
         var pe = _reader.Read(TestFiles.PeFixture);
         Assert.NotNull(pe);
 
-        await pe.SaveAllGroupsToDirectory(_outputDirectory);
+        await _exporter.SaveAllGroupsToDirectoryAsync(pe, _outputDirectory, TestContext.Current.CancellationToken);
 
         var root = Path.Combine(_outputDirectory, "Ico.Reader.Test.PeFixture");
         Assert.Equal(["Cursor", "Icon"], Directory.GetDirectories(root).Select(Path.GetFileName).OrderBy(x => x, StringComparer.Ordinal));
@@ -135,7 +138,7 @@ public sealed class SaveTests : IDisposable
         var pe = _reader.Read(TestFiles.PeFixture);
         Assert.NotNull(pe);
 
-        await pe.SaveAllGroupsToDirectory(_outputDirectory);
+        await _exporter.SaveAllGroupsToDirectoryAsync(pe, _outputDirectory, TestContext.Current.CancellationToken);
 
         var root = Path.Combine(_outputDirectory, "Ico.Reader.Test.PeFixture");
         var written = Directory.GetFiles(root, "*.png", SearchOption.AllDirectories);
@@ -150,7 +153,7 @@ public sealed class SaveTests : IDisposable
     {
         var ico = Read("icon_multi_png_bmp.ico");
 
-        await ico.SaveAllImagesToDirectory(_outputDirectory);
+        await _exporter.SaveAllImagesToDirectoryAsync(ico, _outputDirectory, TestContext.Current.CancellationToken);
 
         foreach (var file in Directory.GetFiles(Path.Combine(_outputDirectory, "icon_multi_png_bmp")))
             _ = PngImage.Parse(await File.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));

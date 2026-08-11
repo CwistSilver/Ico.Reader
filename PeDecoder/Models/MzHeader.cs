@@ -1,37 +1,42 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 
 namespace PeDecoder.Models;
 
-public struct MZ_Header
+/// <summary>
+/// The DOS header every PE file still begins with. Only the signature matters here; the remaining
+/// fields are kept because they describe the format.
+/// </summary>
+internal sealed class MzHeader
 {
-    public char[] Signature;
-    public ushort BytesInLastBlock;
-    public ushort BlocksInFile;
-    public ushort NumRelocs;
-    public ushort HeaderParagraphs;
-    public ushort MinExtraParagraphs;
-    public ushort MaxExtraParagraphs;
-    public ushort Ss;
-    public ushort Sp;
-    public ushort Checksum;
-    public ushort Ip;
-    public ushort Cs;
-    public ushort RelocTableOffset;
-    public ushort OverlayNumber;
+    private const int HeaderSize = 28;
 
-    public static MZ_Header ReadFromStream(Stream stream)
+    public required bool HasMzSignature { get; init; }
+    public required ushort BytesInLastBlock { get; init; }
+    public required ushort BlocksInFile { get; init; }
+    public required ushort NumRelocs { get; init; }
+    public required ushort HeaderParagraphs { get; init; }
+    public required ushort MinExtraParagraphs { get; init; }
+    public required ushort MaxExtraParagraphs { get; init; }
+    public required ushort Ss { get; init; }
+    public required ushort Sp { get; init; }
+    public required ushort Checksum { get; init; }
+    public required ushort Ip { get; init; }
+    public required ushort Cs { get; init; }
+    public required ushort RelocTableOffset { get; init; }
+    public required ushort OverlayNumber { get; init; }
+
+    public static MzHeader ReadFromStream(Stream stream)
     {
         stream.Position = 0;
 
-        var size = 28;
-        Span<byte> data = stackalloc byte[size];
+        Span<byte> data = stackalloc byte[HeaderSize];
         stream.Read(data);
 
         ReadOnlySpan<byte> readOnlyData = data;
 
-        var header = new MZ_Header
+        return new MzHeader
         {
-            Signature = new char[] { (char)readOnlyData[0], (char)readOnlyData[1] },
+            HasMzSignature = readOnlyData[0] == (byte)'M' && readOnlyData[1] == (byte)'Z',
             BytesInLastBlock = BinaryPrimitives.ReadUInt16LittleEndian(readOnlyData.Slice(2, 2)),
             BlocksInFile = BinaryPrimitives.ReadUInt16LittleEndian(readOnlyData.Slice(4, 2)),
             NumRelocs = BinaryPrimitives.ReadUInt16LittleEndian(readOnlyData.Slice(6, 2)),
@@ -46,7 +51,5 @@ public struct MZ_Header
             RelocTableOffset = BinaryPrimitives.ReadUInt16LittleEndian(readOnlyData.Slice(24, 2)),
             OverlayNumber = BinaryPrimitives.ReadUInt16LittleEndian(readOnlyData.Slice(26, 2))
         };
-
-        return header;
     }
 }

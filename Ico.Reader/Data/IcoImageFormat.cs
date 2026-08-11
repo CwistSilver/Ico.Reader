@@ -2,6 +2,6 @@
 
 public enum IcoImageFormat
 {
-    BMP,
-    PNG
+    Bmp,
+    Png
 }

@@ -1,6 +1,7 @@
-using Ico.Reader.Utils;
+﻿using Ico.Reader.Utils;
 
 namespace Ico.Reader.Data;
+
 /// <summary>
 /// Represents a collection of <see cref="CursorDirectoryEntry"/> within an CUR file.
 /// </summary>
@@ -48,15 +49,4 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
     public int Size => DirectoryEntries?.Length ?? 0;
 
     public override string ToString() => $"[{nameof(CursorGroup)}] {Name} ({Size})";
-
-    public CursorDirectoryEntry[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
-    {
-        if (icoHeader.ImageType != CursorDirectoryEntry.ImageType)
-            throw new ArgumentException("The ico data does not contain cursor data.", nameof(icoHeader));
-
-        return DirectoryEntryReader.ReadEntries(stream, IcoGroupUtils.ExeEntrySize, icoHeader.ImageCount, IcoGroupUtils.ParseCursorEntry);
-    }
-
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
-        => IcoGroupUtils.ReadFromEXEStream(stream, icoHeader);
 }

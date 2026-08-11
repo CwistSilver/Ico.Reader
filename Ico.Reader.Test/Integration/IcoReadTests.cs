@@ -15,7 +15,7 @@ public sealed class IcoReadTests
         Assert.Equal(width, reference.Width);
         Assert.Equal(height, reference.Height);
         Assert.Equal(bitCount, reference.BitCount);
-        Assert.Equal(IcoImageFormat.BMP, reference.Format);
+        Assert.Equal(IcoImageFormat.Bmp, reference.Format);
         Assert.Equal(IcoType.Icon, reference.IcoType);
     }
 
@@ -83,7 +83,7 @@ public sealed class IcoReadTests
 
         Assert.NotNull(ico);
         var reference = Assert.Single(ico.ImageReferences);
-        Assert.Equal(IcoImageFormat.PNG, reference.Format);
+        Assert.Equal(IcoImageFormat.Png, reference.Format);
         Assert.Equal(256, reference.Width);
         Assert.Equal(256, reference.Height);
     }

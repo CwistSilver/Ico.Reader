@@ -1,4 +1,4 @@
-﻿using Ico.Reader.Creator;
+using Ico.Reader.Creator;
 using Ico.Reader.Data;
 using Ico.Reader.Decoder;
 using Ico.Reader.Decoder.ImageDecoder;
@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PeDecoder;
 
 namespace Ico.Reader;
+
 /// <summary>
 /// Contains extension methods for configuring ico reading services.
 /// </summary>
@@ -17,34 +18,38 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds services necessary for reading and decoding ico files.
     /// </summary>
+    /// <remarks>
+    /// Using a container is optional. Every type registered here is also reachable through a
+    /// parameterless constructor, so <c>new IcoReader()</c> produces the same composition.
+    /// </remarks>
     /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
     /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
     public static IServiceCollection AddIcoReader(this IServiceCollection services)
     {
-        services.AddSingleton<IIcoBmpDecoder, IcoBmp1Decoder>();
-        services.AddSingleton<IIcoBmpDecoder, IcoBmp4Decoder>();
-        services.AddSingleton<IIcoBmpDecoder, IcoBmp8Decoder>();
-        services.AddSingleton<IIcoBmpDecoder, IcoBmp24Decoder>();
-        services.AddSingleton<IIcoBmpDecoder, IcoBmp32Decoder>();
-        services.AddSingleton<IDecoder, BmpDecoder>();
+        // The default set comes from IcoReaderDefaults so this list and the parameterless
+        // constructors cannot disagree about which decoders ship.
+        foreach (var bmpDecoder in IcoReaderDefaults.CreateBmpDecoders())
+        {
+            services.AddSingleton(bmpDecoder);
+        }
+
+        services.AddSingleton<IPngCreator>(_ => IcoReaderDefaults.CreatePngCreator());
+
+        // Composed from the container rather than from the defaults, so a caller that registers an
+        // extra IIcoBmpDecoder gets it picked up.
+        services.AddSingleton<IDecoder>(p => new BmpDecoder(p.GetServices<IIcoBmpDecoder>(), p.GetRequiredService<IPngCreator>()));
         services.AddSingleton<IDecoder, PngDecoder>();
 
         services.AddSingleton<IPeDecoder, PeDecoder.PeDecoder>();
         services.AddSingleton<IIcoDecoder, IcoDecoder>();
         services.AddSingleton<IIcoPeDecoder, IcoPeDecoder>();
+        services.AddSingleton<Export.IIcoExporter, Export.IcoExporter>();
 
-        services.AddSingleton<IPngCreator, PngCreator>();
-
-        services.AddSingleton(p =>
+        services.AddSingleton(p => new IcoReader(new IcoReaderConfiguration
         {
-            var configuration = new IcoReaderConfiguration
-            {
-                IcoExeDecoder = p.GetRequiredService<IIcoPeDecoder>(),
-                IcoDecoder = p.GetRequiredService<IIcoDecoder>()
-            };
-
-            return new IcoReader(configuration);
-        });
+            IcoExeDecoder = p.GetRequiredService<IIcoPeDecoder>(),
+            IcoDecoder = p.GetRequiredService<IIcoDecoder>()
+        }));
 
         return services;
     }

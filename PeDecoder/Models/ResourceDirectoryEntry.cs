@@ -1,9 +1,11 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
+using PeDecoder.Utils;
+
 namespace PeDecoder.Models;
 
-public class ResourceDirectoryEntry
+internal sealed class ResourceDirectoryEntry
 {
     public const byte ResourceDirectoryEntrySize = 8;
 
@@ -20,32 +22,29 @@ public class ResourceDirectoryEntry
         resourceStream.Read(lengthBytes);
         var nameLength = MemoryMarshal.Read<ushort>(lengthBytes);
 
-        Span<byte> nameBytes = stackalloc byte[nameLength * 2];
-        resourceStream.Read(nameBytes);
-
-        return Encoding.Unicode.GetString(nameBytes);
+        // A name is UTF-16 and its length is a ushort, so this can ask for 128 KB of stack.
+        return PooledStreamReader.Read(resourceStream, nameLength * 2, Encoding.Unicode.GetString);
     }
 
     public static ResourceDirectoryEntry[] ReadFromStream(Stream stream, ResourceDirectory resourceDirectory, long resourceDirectoryOffset)
     {
-        stream.Position = resourceDirectoryOffset + 16;
+        stream.Position = resourceDirectoryOffset + ResourceDirectory.HeaderSize;
         var total = resourceDirectory.NumberOfNamedEntries + resourceDirectory.NumberOfIdEntries;
-        var entries = new ResourceDirectoryEntry[total];
 
-        Span<byte> data = stackalloc byte[total * ResourceDirectoryEntrySize];
-        stream.Read(data);
-
-        ReadOnlySpan<byte> readOnlyData = data;
-
-        for (var i = 0; i < total; i++)
+        return PooledStreamReader.Read(stream, total * ResourceDirectoryEntrySize, data =>
         {
-            var entrySpan = readOnlyData.Slice(ResourceDirectoryEntrySize * i, ResourceDirectoryEntrySize);
-            entries[i] = new ResourceDirectoryEntry();
-            AddNameOrId(entries[i], entrySpan);
-            AddSubdirectoryOrDataEntry(entries[i], entrySpan);
-        }
+            var entries = new ResourceDirectoryEntry[total];
 
-        return entries;
+            for (var i = 0; i < total; i++)
+            {
+                var entrySpan = data.Slice(ResourceDirectoryEntrySize * i, ResourceDirectoryEntrySize);
+                entries[i] = new ResourceDirectoryEntry();
+                AddNameOrId(entries[i], entrySpan);
+                AddSubdirectoryOrDataEntry(entries[i], entrySpan);
+            }
+
+            return entries;
+        });
     }
 
     private static void AddNameOrId(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)

@@ -36,7 +36,5 @@ public interface IIcoGroup<T> where T : IIcoDirectoryEntry
     /// </para>
     /// </summary>
     T[] DirectoryEntries { get; set; }
-
-    T[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader);
 }
 

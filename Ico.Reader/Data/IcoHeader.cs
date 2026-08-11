@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 namespace Ico.Reader.Data;
+
 /// <summary>
 /// Represents the header of an ico resource, detailing the ico's format and the number of images it contains.
 /// This header is used to identify the structure of an ico file or resource in memory.

@@ -3,6 +3,7 @@
 using Ico.Reader.Data;
 
 namespace Ico.Reader.Decoder.ImageDecoder;
+
 /// <summary>
 /// A decoder that specializes in decoding PNG (Portable Network Graphics) image data from ico files.
 /// This decoder interprets PNG data embedded within ico files, allowing for the extraction and manipulation of PNG images.
@@ -14,7 +15,7 @@ public sealed class PngDecoder : IDecoder
     /// <summary>
     /// Specifies that this decoder supports the PNG image format.
     /// </summary>
-    public IcoImageFormat SupportedFormat => IcoImageFormat.PNG;
+    public IcoImageFormat SupportedFormat => IcoImageFormat.Png;
 
     /// <summary>
     /// Decodes PNG image data into a byte array. This implementation simply returns the input data as PNG images are already in a suitable format for most applications.

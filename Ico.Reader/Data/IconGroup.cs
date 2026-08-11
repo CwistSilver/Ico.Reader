@@ -1,6 +1,7 @@
-using Ico.Reader.Utils;
+﻿using Ico.Reader.Utils;
 
 namespace Ico.Reader.Data;
+
 /// <summary>
 /// Represents a collection of <see cref="IconDirectoryEntry"/> within an ICO file.
 /// </summary>
@@ -48,15 +49,4 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
     }
 
     public override string ToString() => $"[{nameof(IconGroup)}] {Name} ({Size})";
-
-    public IconDirectoryEntry[] ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
-    {
-        if (icoHeader.ImageType != IconDirectoryEntry.ImageType)
-            throw new ArgumentException("The ico data does not contain icon data.", nameof(icoHeader));
-
-        return DirectoryEntryReader.ReadEntries(stream, IcoGroupUtils.ExeEntrySize, icoHeader.ImageCount, IcoGroupUtils.ParseIconEntry);
-    }
-
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.ReadEntriesFromEXEStream(Stream stream, IcoHeader icoHeader)
-        => IcoGroupUtils.ReadFromEXEStream(stream, icoHeader);
 }

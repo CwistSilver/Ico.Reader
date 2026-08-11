@@ -1,8 +1,10 @@
 ﻿using System.Runtime.InteropServices;
 
+using PeDecoder.Utils;
+
 namespace PeDecoder.Models;
 
-public class OptionalHeader
+internal sealed class OptionalHeader
 {
     // https://learn.microsoft.com/de-de/windows/win32/debug/pe-format#optional-header-standard-fields-image-only
     public MagicNumber Magic { get; set; }
@@ -53,33 +55,34 @@ public class OptionalHeader
     public ImageDataDirectory? CLRRuntimeHeader { get; set; }
     public ImageDataDirectory? Reserved { get; set; }
 
-    public static OptionalHeader? ReadFromStream(Stream stream, PE_Header header)
+    public static OptionalHeader? ReadFromStream(Stream stream, PeHeader header)
     {
         if (header.SizeOfOptionalHeader == 0)
             return null;
 
-        stream.Position = header.HeaderOffset + PE_Header.PeHeaderSize;
-        Span<byte> data = stackalloc byte[header.SizeOfOptionalHeader];
-        stream.Read(data);
+        stream.Position = header.HeaderOffset + PeHeader.PeHeaderSize;
 
-        ReadOnlySpan<byte> readOnlyData = data;
+        return PooledStreamReader.Read(stream, header.SizeOfOptionalHeader, data =>
+        {
+            var optionalHeader = new OptionalHeader
+            {
+                Magic = (MagicNumber)MemoryMarshal.Read<ushort>(data.Slice(0, 2)),
+                MajorLinkerVersion = data[2],
+                MinorLinkerVersion = data[3],
+                SizeOfCode = MemoryMarshal.Read<uint>(data.Slice(4, 4)),
+                SizeOfInitializedData = MemoryMarshal.Read<uint>(data.Slice(8, 4)),
+                SizeOfUninitializedData = MemoryMarshal.Read<uint>(data.Slice(12, 4)),
+                AddressOfEntryPoint = MemoryMarshal.Read<uint>(data.Slice(16, 4)),
+                BaseOfCode = MemoryMarshal.Read<uint>(data.Slice(20, 4))
+            };
 
-        var optionalHeader = new OptionalHeader();
-        optionalHeader.Magic = (MagicNumber)MemoryMarshal.Read<ushort>(readOnlyData.Slice(0, 2));
-        optionalHeader.MajorLinkerVersion = readOnlyData[2];
-        optionalHeader.MinorLinkerVersion = readOnlyData[3];
-        optionalHeader.SizeOfCode = MemoryMarshal.Read<uint>(readOnlyData.Slice(4, 4));
-        optionalHeader.SizeOfInitializedData = MemoryMarshal.Read<uint>(readOnlyData.Slice(8, 4));
-        optionalHeader.SizeOfUninitializedData = MemoryMarshal.Read<uint>(readOnlyData.Slice(12, 4));
-        optionalHeader.AddressOfEntryPoint = MemoryMarshal.Read<uint>(readOnlyData.Slice(16, 4));
-        optionalHeader.BaseOfCode = MemoryMarshal.Read<uint>(readOnlyData.Slice(20, 4));
+            if (optionalHeader.Magic == MagicNumber.PE32Plus)
+                optionalHeader.BaseOfData = MemoryMarshal.Read<uint>(data.Slice(24, 4));
 
-        if (optionalHeader.Magic == MagicNumber.PE32Plus)
-            optionalHeader.BaseOfData = MemoryMarshal.Read<uint>(readOnlyData.Slice(24, 4));
+            AddImageDataDirectory(data, optionalHeader);
 
-        AddImageDataDirectory(readOnlyData, optionalHeader);
-
-        return optionalHeader;
+            return optionalHeader;
+        });
     }
 
     private static void AddImageDataDirectory(ReadOnlySpan<byte> optionalHeaderSpan, OptionalHeader optionalHeader)

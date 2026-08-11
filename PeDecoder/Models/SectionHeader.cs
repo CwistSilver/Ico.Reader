@@ -1,9 +1,12 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
+using PeDecoder.Utils;
+
 namespace PeDecoder.Models;
+
 // https://learn.microsoft.com/en-gb/windows/win32/debug/pe-format?redirectedfrom=MSDN#section-table-section-headers
-public class SectionHeader
+internal sealed class SectionHeader
 {
     public const uint SectionSize = 40;
 
@@ -20,40 +23,40 @@ public class SectionHeader
 
     public override string ToString() => $"{Name}";
 
-    public static SectionHeader[] ReadFromStream(Stream stream, PE_Header peHeader)
+    public static SectionHeader[] ReadFromStream(Stream stream, PeHeader peHeader)
     {
-        stream.Position = peHeader.SizeOfOptionalHeader + peHeader.HeaderOffset + PE_Header.PeHeaderSize;
+        stream.Position = peHeader.SizeOfOptionalHeader + peHeader.HeaderOffset + PeHeader.PeHeaderSize;
 
-        var sections = new SectionHeader[peHeader.NumberOfSections];
+        var sectionCount = peHeader.NumberOfSections;
 
-        var sectionsSize = peHeader.NumberOfSections * SectionSize;
-        Span<byte> data = stackalloc byte[(int)sectionsSize];
-        stream.Read(data);
-
-        ReadOnlySpan<byte> readOnlyData = data;
-        Span<char> nameChars = stackalloc char[8];
-
-        for (var i = 0; i < peHeader.NumberOfSections; i++)
+        return PooledStreamReader.Read(stream, (int)(sectionCount * SectionSize), data =>
         {
-            var sectionIndex = i * (int)SectionSize;
+            var sections = new SectionHeader[sectionCount];
+            Span<char> nameChars = stackalloc char[8];
 
-            sections[i] = new SectionHeader();
+            for (var i = 0; i < sectionCount; i++)
+            {
+                var sectionIndex = i * (int)SectionSize;
+                Encoding.UTF8.GetChars(data.Slice(sectionIndex, 8), nameChars);
 
-            Encoding.UTF8.GetChars(readOnlyData.Slice(sectionIndex, 8), nameChars);
-            sections[i].Name = nameChars.ToStringFast().Trim('\0');
+                sections[i] = new SectionHeader
+                {
+                    // A section name is eight bytes, null-padded when shorter.
+                    Name = nameChars.ToString().Trim('\0'),
+                    VirtualSize = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 8, 4)),
+                    VirtualAddress = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 12, 4)),
+                    SizeOfRawData = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 16, 4)),
+                    PointerToRawData = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 20, 4)),
+                    PointerToRelocations = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 24, 4)),
+                    PointerToLinenumbers = MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 28, 4)),
+                    NumberOfRelocations = MemoryMarshal.Read<ushort>(data.Slice(sectionIndex + 32, 2)),
+                    NumberOfLinenumbers = MemoryMarshal.Read<ushort>(data.Slice(sectionIndex + 34, 2)),
+                    Characteristics = (SectionFlag)MemoryMarshal.Read<uint>(data.Slice(sectionIndex + 36, 4))
+                };
+            }
 
-            sections[i].VirtualSize = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 8, 4));
-            sections[i].VirtualAddress = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 12, 4));
-            sections[i].SizeOfRawData = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 16, 4));
-            sections[i].PointerToRawData = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 20, 4));
-            sections[i].PointerToRelocations = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 24, 4));
-            sections[i].PointerToLinenumbers = MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 28, 4));
-            sections[i].NumberOfRelocations = MemoryMarshal.Read<ushort>(readOnlyData.Slice(sectionIndex + 32, 2));
-            sections[i].NumberOfLinenumbers = MemoryMarshal.Read<ushort>(readOnlyData.Slice(sectionIndex + 34, 2));
-            sections[i].Characteristics = (SectionFlag)MemoryMarshal.Read<uint>(readOnlyData.Slice(sectionIndex + 36, 4));
-        }
-
-        return sections;
+            return sections;
+        });
     }
 
     public uint GetFileOffset(uint rva)

@@ -1,7 +1,7 @@
 ﻿namespace PeDecoder.Models;
 
 [Flags]
-public enum SectionFlag : uint
+internal enum SectionFlag : uint
 {
     /// <summary>
     /// Reserved for future use.

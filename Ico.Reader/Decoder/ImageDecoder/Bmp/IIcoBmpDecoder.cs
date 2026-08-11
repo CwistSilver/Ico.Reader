@@ -1,6 +1,7 @@
 ﻿using Ico.Reader.Data;
 
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
+
 /// <summary>
 /// Defines the functionality for an ico bitmap decoder that converts bitmap data from icos into an array of ARGB values.
 /// This interface specifies the supported bit depth for decoding and a method for the actual decoding process.
@@ -19,5 +20,5 @@ public interface IIcoBmpDecoder
     /// <param name="data">The raw bitmap data to decode. This data should correspond to the bitmap information provided in the header.</param>
     /// <param name="header">The header providing details about the bitmap data, such as dimensions and bit depth.</param>
     /// <returns>An array of bytes representing the decoded bitmap in RGBA format.</returns>
-    byte[] DecodeIcoBmpToRgba(ReadOnlySpan<byte> data, BMP_Info_Header header);
+    byte[] DecodeIcoBmpToRgba(ReadOnlySpan<byte> data, BmpInfoHeader header);
 }

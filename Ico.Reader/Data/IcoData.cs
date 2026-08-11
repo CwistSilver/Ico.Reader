@@ -5,7 +5,7 @@ using Ico.Reader.Decoder;
 
 namespace Ico.Reader.Data;
 
-public class IcoData
+public sealed class IcoData
 {
     /// <summary>
     /// The type of file from which the ICO data was originally extracted.
@@ -59,8 +59,8 @@ public class IcoData
         _dataSource = dataSource;
         ImageReferences = Array.AsReadOnly(decodedIcoResult.References.ToArray());
         Groups = Array.AsReadOnly(decodedIcoResult.IcoGroups.ToArray());
-        IconGroups = Array.AsReadOnly(decodedIcoResult.IcoGroups.Where(x => x.IcoType == IcoType.Icon).Cast<IconGroup>().ToArray());
-        CursorGroups = Array.AsReadOnly(decodedIcoResult.IcoGroups.Where(x => x.IcoType == IcoType.Cursor).Cast<CursorGroup>().ToArray());
+        IconGroups = Array.AsReadOnly(decodedIcoResult.IcoGroups.OfType<IconGroup>().ToArray());
+        CursorGroups = Array.AsReadOnly(decodedIcoResult.IcoGroups.OfType<CursorGroup>().ToArray());
         OriginFileType = decodedIcoResult.OriginFileType;
     }
 
@@ -118,7 +118,8 @@ public class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
-    public Task<byte[]> GetImageAsync(int imageReferenceIndex) => GetImageAsync(ImageReferences[imageReferenceIndex]);
+    public Task<byte[]> GetImageAsync(int imageReferenceIndex, CancellationToken cancellationToken = default)
+        => GetImageAsync(ImageReferences[imageReferenceIndex], cancellationToken);
 
     /// <summary>
     /// Retrieves the image data for a specified group and image index asynchronously.
@@ -129,11 +130,8 @@ public class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
-    public Task<byte[]> GetImageAsync(string groupName, int entryIndex, IcoType icoType)
-    {
-        var imageReference = GetImageReference(groupName, entryIndex, icoType);
-        return GetImageAsync(imageReference);
-    }
+    public Task<byte[]> GetImageAsync(string groupName, int entryIndex, IcoType icoType, CancellationToken cancellationToken = default)
+        => GetImageAsync(GetImageReference(groupName, entryIndex, icoType), cancellationToken);
 
     /// <summary>
     /// Retrieves the image data for a specified entry within an ICO group asynchronously.
@@ -143,11 +141,8 @@ public class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
-    public Task<byte[]> GetImageAsync(IIcoGroup group, int entryIndex)
-    {
-        var imageReference = GetImageReference(group, entryIndex);
-        return GetImageAsync(imageReference);
-    }
+    public Task<byte[]> GetImageAsync(IIcoGroup group, int entryIndex, CancellationToken cancellationToken = default)
+        => GetImageAsync(GetImageReference(group, entryIndex), cancellationToken);
 
     /// <summary>
     /// Retrieves the image data for a specified image reference asynchronously.
@@ -156,73 +151,10 @@ public class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
-    public async Task<byte[]> GetImageAsync(ImageReference imageReference)
+    public async Task<byte[]> GetImageAsync(ImageReference imageReference, CancellationToken cancellationToken = default)
     {
-        using var stream = _dataSource.GetStream(true);
-        stream.Position = imageReference.Offset;
-        var imageData = new byte[imageReference.Size];
-        await stream.ReadAsync(imageData, 0, imageData.Length);
-
-        return _icoDecoder.GetImageData(imageData.AsSpan(), imageReference.Format);
-    }
-
-    #endregion
-
-    #region SaveImageAsyncFunctions
-    /// <summary>
-    /// Saves the image data for a specified image index to a file asynchronously.
-    /// </summary>
-    /// <param name="imageReferenceIndex">The index of the image to save.</param>
-    /// <param name="path">The file path where the image data should be saved.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation.
-    /// </returns>
-    public Task SaveImageAsync(int imageReferenceIndex, string path) => SaveImageAsync(ImageReferences[imageReferenceIndex], path);
-
-    /// <summary>
-    /// Saves the image data for a specified group and image index to a file asynchronously.
-    /// </summary>
-    /// <param name="groupName">The name of the ICO group.</param>
-    /// <param name="entryIndex">The index of the entry within the group to save.</param>
-    /// <param name="path">The file path where the image data should be saved.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation.
-    /// </returns>
-    public Task SaveImageAsync(string groupName, int entryIndex, string path, IcoType icoType)
-    {
-        var imageReference = GetImageReference(groupName, entryIndex, icoType);
-        return SaveImageAsync(imageReference, path);
-    }
-
-    /// <summary>
-    /// Saves the image data for a specified entry within an ICO group to a file asynchronously.
-    /// </summary>
-    /// <param name="group">The ICO group that contains the image entry.</param>
-    /// <param name="entryIndex">The index of the entry within the group to save.</param>
-    /// <param name="path">The file path where the image data should be saved.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation.
-    /// </returns>
-    public Task SaveImageAsync(IIcoGroup group, int entryIndex, string path)
-    {
-        var imageReference = GetImageReference(group, entryIndex);
-        return SaveImageAsync(imageReference, path);
-    }
-
-    /// <summary>
-    /// Saves the image data for a specified image reference to a file asynchronously.
-    /// </summary>
-    /// <param name="imageReference">The image reference that contains metadata for the image.</param>
-    /// <param name="path">The file path where the image data should be saved.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation.
-    /// </returns>
-    public async Task SaveImageAsync(ImageReference imageReference, string path)
-    {
-        var data = await GetImageAsync(imageReference);
-        using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, true);
-        await fileStream.WriteAsync(data, 0, data.Length);
+        using var stream = _dataSource.GetStream(useAsync: true);
+        return await imageReference.GetImageDataAsync(stream, _icoDecoder, cancellationToken).ConfigureAwait(false);
     }
 
     #endregion
@@ -237,7 +169,7 @@ public class IcoData
     /// <param name="areaWeight">The relative importance of the pixel area.</param>
     /// <returns>The index of the image with the highest calculated quality, or -1 if there are no images.</returns>
     public int PreferredImageIndex(float colorBitWeight = 1f, float areaWeight = 2f)
-        => BestByQuality(ImageReferences, colorBitWeight, areaWeight);
+        => ImageQuality.BestIndex(ImageReferences, colorBitWeight, areaWeight);
 
     /// <summary>
     /// Determines the index of the preferred image for a given group based on its quality.
@@ -262,137 +194,11 @@ public class IcoData
     /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>), or -1 if the group is empty.</returns>
     public int PreferredImageIndex(IIcoGroup group, float colorBitWeight = 1f, float areaWeight = 2f)
     {
-        var imageReferences = new ImageReference[group.Size];
-        for (var i = 0; i < group.Size; i++)
-            imageReferences[i] = GetImageReference(group, i);
-
-        var bestIndex = BestByQuality(imageReferences, colorBitWeight, areaWeight);
+        var imageReferences = GetImageReferences(group);
+        var bestIndex = ImageQuality.BestIndex(imageReferences, colorBitWeight, areaWeight);
         return bestIndex < 0 ? -1 : ImageReferences.IndexOf(imageReferences[bestIndex]);
     }
 
-    /// <summary>
-    /// Scores each image as a weighted sum of its pixel area and color bit depth, both expressed as a fraction of
-    /// the largest value present, and returns the index of the highest scoring image.
-    /// <para>
-    /// The weights are a ratio and are normalized internally, so 2 and 1 rank identically to 0.667 and 0.333.
-    /// Because both terms are relative to the supplied set, a score is only meaningful within that set.
-    /// </para>
-    /// </summary>
-    private static int BestByQuality(IReadOnlyList<ImageReference> imageReferences, float colorBitWeight, float areaWeight)
-    {
-        if (colorBitWeight < 0)
-            throw new ArgumentOutOfRangeException(nameof(colorBitWeight), colorBitWeight, "Weights cannot be negative.");
-        if (areaWeight < 0)
-            throw new ArgumentOutOfRangeException(nameof(areaWeight), areaWeight, "Weights cannot be negative.");
-
-        var weightSum = colorBitWeight + areaWeight;
-        if (weightSum <= 0)
-            throw new ArgumentException("At least one weight must be greater than zero.", nameof(areaWeight));
-
-        if (imageReferences.Count == 0)
-            return -1;
-
-        long maxArea = 0;
-        var maxBitCount = 0;
-        foreach (var imageReference in imageReferences)
-        {
-            maxArea = Math.Max(maxArea, (long)imageReference.Width * imageReference.Height);
-            maxBitCount = Math.Max(maxBitCount, imageReference.BitCount);
-        }
-
-        var bestIndex = 0;
-        var bestQuality = double.NegativeInfinity;
-        for (var i = 0; i < imageReferences.Count; i++)
-        {
-            var imageReference = imageReferences[i];
-            var areaRatio = maxArea > 0 ? (double)((long)imageReference.Width * imageReference.Height) / maxArea : 0;
-            var bitRatio = maxBitCount > 0 ? (double)imageReference.BitCount / maxBitCount : 0;
-            var qualityScore = ((areaWeight * areaRatio) + (colorBitWeight * bitRatio)) / weightSum;
-
-            if (qualityScore > bestQuality)
-            {
-                bestQuality = qualityScore;
-                bestIndex = i;
-            }
-        }
-
-        return bestIndex;
-    }
-
-    #endregion
-
-    #region SaveFunctions
-
-    /// <summary>
-    /// Saves all ICO groups to a specified directory asynchronously. Each group is saved in its own subdirectory.
-    /// </summary>
-    /// <param name="path">The root directory path where the groups should be saved.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task SaveAllGroupsToDirectory(string path)
-    {
-        var rootPath = GetRootDirPath(path);
-        var tasks = Groups.Select(group => SaveGroupToDirectory(group.Name, rootPath, group.IcoType)).ToArray();
-        await Task.WhenAll(tasks);
-    }
-
-    /// <summary>
-    /// Saves all images of a specific ICO group to a directory asynchronously.
-    /// </summary>
-    /// <param name="groupName">The name of the ICO group whose images are to be saved.</param>
-    /// <param name="path">The directory path where the images should be saved.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the group type.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
-    public Task SaveGroupToDirectory(string groupName, string path, IcoType icoType)
-    {
-        var group = GetGroup(groupName, icoType);
-        return SaveGroupToDirectory(group, path);
-    }
-
-    /// <summary>
-    /// Saves all images of a specified ICO group to a directory asynchronously.
-    /// </summary>
-    /// <param name="group">The ICO group whose images are to be saved.</param>
-    /// <param name="path">The directory path where the images should be saved.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task SaveGroupToDirectory(IIcoGroup group, string path)
-    {
-        var tasks = new List<Task>();
-        var groupPath = Path.Combine(path, group.IcoType.ToString(), $"Group {group.Name}");
-        Directory.CreateDirectory(groupPath);
-        var imageReferences = GetImageReferences(group);
-
-        for (var i = 0; i < imageReferences.Count; i++)
-        {
-            var imageReference = imageReferences[i];
-            var filePath = GetImageFilePath(imageReference, groupPath);
-            tasks.Add(SaveImageAsync(imageReference, filePath));
-        }
-
-        await Task.WhenAll(tasks);
-    }
-
-    /// <summary>
-    /// Saves all images to a specified directory asynchronously. Each image is saved as a separate file.
-    /// </summary>
-    /// <param name="path">The directory path where the images should be saved.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task SaveAllImagesToDirectory(string path)
-    {
-        var rootPath = GetRootDirPath(path);
-        Directory.CreateDirectory(GetRootDirPath(path));
-
-        var saveImageTasks = new List<Task>();
-
-        for (var i = 0; i < ImageReferences.Count; i++)
-        {
-            var imageReference = ImageReferences[i];
-            var pathFile = GetImageFilePath(imageReference, rootPath);
-            saveImageTasks.Add(SaveImageAsync(imageReference, pathFile));
-        }
-
-        await Task.WhenAll(saveImageTasks);
-    }
     #endregion
 
     #region GetImageReferenceFunctions
@@ -501,20 +307,4 @@ public class IcoData
 
     public override string ToString() => $"{Name} Groups[{Groups.Count}] Images[{ImageReferences.Count}] ({OriginFileType})";
 
-    private string GetRootDirPath(string path)
-    {
-        var rootName = string.IsNullOrEmpty(Name) ? $"Ico_{DateTime.Now.Day}-{DateTime.Now.Month}-{DateTime.Now.Year} {DateTime.Now.Hour}-{DateTime.Now.Minute}-{DateTime.Now.Second}" : Name;
-        return Path.Combine(path, rootName);
-    }
-
-    private string GetImageFilePath(ImageReference imageReference, string rootPath)
-    {
-        string fileName;
-        if (string.IsNullOrEmpty(Name))
-            fileName = $"{imageReference.Id}_{imageReference.IcoType} ({imageReference.Width}x{imageReference.Height} {imageReference.BitCount} bit).png";
-        else
-            fileName = $"{imageReference.Id}_{Name} ({imageReference.Width}x{imageReference.Height} {imageReference.BitCount} bit).png";
-
-        return Path.Combine(rootPath, fileName);
-    }
 }

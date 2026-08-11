@@ -20,10 +20,10 @@ public sealed class IcoDecoderTests
     private static byte[] BmpHeader() => IcoBmpImage.Indexed(8, [new(1, 2, 3)], new byte[2, 2]);
 
     [Fact]
-    public void ReadFormat_DetectsBmp() => Assert.Equal(IcoImageFormat.BMP, _decoder.ReadFormat(BmpHeader()));
+    public void ReadFormat_DetectsBmp() => Assert.Equal(IcoImageFormat.Bmp, _decoder.ReadFormat(BmpHeader()));
 
     [Fact]
-    public void ReadFormat_DetectsPng() => Assert.Equal(IcoImageFormat.PNG, _decoder.ReadFormat(PngHeader()));
+    public void ReadFormat_DetectsPng() => Assert.Equal(IcoImageFormat.Png, _decoder.ReadFormat(PngHeader()));
 
     [Fact]
     public void ReadFormat_ThrowsForUnknownData()
@@ -46,7 +46,7 @@ public sealed class IcoDecoderTests
     [Fact]
     public void GetImageData_DispatchesToTheMatchingDecoder()
     {
-        var png = _decoder.GetImageData(PngHeader(), IcoImageFormat.PNG);
+        var png = _decoder.GetImageData(PngHeader(), IcoImageFormat.Png);
 
         Assert.Equal(PngHeader(), png);
     }
@@ -56,8 +56,8 @@ public sealed class IcoDecoderTests
     {
         var decoder = new IcoDecoder([new PngDecoder()]);
 
-        var exception = Assert.Throws<NotSupportedException>(() => decoder.GetImageData(BmpHeader(), IcoImageFormat.BMP));
-        Assert.Contains("BMP", exception.Message);
+        var exception = Assert.Throws<NotSupportedException>(() => decoder.GetImageData(BmpHeader(), IcoImageFormat.Bmp));
+        Assert.Contains(IcoImageFormat.Bmp.ToString(), exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class IcoDecoderTests
     {
         var decoder = new IcoDecoder([new PngDecoder()]);
 
-        Assert.Equal(IcoImageFormat.PNG, decoder.ReadFormat(PngHeader()));
+        Assert.Equal(IcoImageFormat.Png, decoder.ReadFormat(PngHeader()));
         Assert.Throws<NotSupportedException>(() => decoder.ReadFormat(BmpHeader()));
     }
 }

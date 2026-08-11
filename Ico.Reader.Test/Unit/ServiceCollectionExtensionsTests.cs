@@ -38,8 +38,8 @@ public sealed class ServiceCollectionExtensionsTests
 
         var formats = provider.GetServices<IDecoder>().Select(x => x.SupportedFormat).ToArray();
 
-        Assert.Contains(IcoImageFormat.BMP, formats);
-        Assert.Contains(IcoImageFormat.PNG, formats);
+        Assert.Contains(IcoImageFormat.Bmp, formats);
+        Assert.Contains(IcoImageFormat.Png, formats);
     }
 
     [Fact]

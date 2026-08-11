@@ -9,7 +9,7 @@ public sealed class BmpDecoderTests
     private static readonly Rgb[] _palette = [new(0, 0, 0), new(255, 255, 255)];
 
     [Fact]
-    public void SupportedFormat_IsBmp() => Assert.Equal(IcoImageFormat.BMP, _decoder.SupportedFormat);
+    public void SupportedFormat_IsBmp() => Assert.Equal(IcoImageFormat.Bmp, _decoder.SupportedFormat);
 
     [Fact]
     public void IsSupported_AcceptsAFortyByteInfoHeader()
@@ -35,7 +35,7 @@ public sealed class BmpDecoderTests
         Assert.Equal(4, metadata.Width);
         Assert.Equal(6, metadata.Height);
         Assert.Equal(8, metadata.BitCount);
-        Assert.Equal(IcoImageFormat.BMP, metadata.Format);
+        Assert.Equal(IcoImageFormat.Bmp, metadata.Format);
     }
 
     [Theory]

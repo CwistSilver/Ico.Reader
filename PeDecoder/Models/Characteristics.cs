@@ -1,7 +1,7 @@
 ﻿namespace PeDecoder.Models;
 
 [Flags]
-public enum Characteristics : ushort
+internal enum Characteristics : ushort
 {
     ImageFileRelocsStripped = 0x0001,
     ImageFileExecutableImage = 0x0002,

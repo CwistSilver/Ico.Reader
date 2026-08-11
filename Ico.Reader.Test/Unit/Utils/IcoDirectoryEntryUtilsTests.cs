@@ -1,4 +1,4 @@
-using Ico.Reader.Utils;
+﻿using Ico.Reader.Utils;
 
 namespace Ico.Reader.Test.Unit.Utils;
 
@@ -127,6 +127,23 @@ public sealed class IcoDirectoryEntryUtilsTests
         var header = new IcoHeader { ImageType = 1, ImageCount = 1 };
 
         Assert.Throws<ArgumentException>(() => IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<CursorDirectoryEntry>(stream, header));
+    }
+
+    [Fact]
+    public void ReadEntriesFromEXEStream_DoesNotExhaustTheStackForALargeDirectory()
+    {
+        var header = new IcoHeader { ImageType = 1, ImageCount = ushort.MaxValue };
+        var stream = new MemoryStream(new byte[ushort.MaxValue * 14]);
+
+        Assert.Equal(ushort.MaxValue, IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(stream, header).Length);
+    }
+
+    [Fact]
+    public void ReadEntriesFromEXEStream_RejectsIconEntriesForACursorHeader()
+    {
+        var header = new IcoHeader { ImageType = 2, ImageCount = 1 };
+
+        Assert.Throws<ArgumentException>(() => IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(new MemoryStream(new byte[14]), header));
     }
 
     private static byte[] ExeEntry(byte width, byte height, ushort colorDepth, uint imageSize, ushort resourceId)
