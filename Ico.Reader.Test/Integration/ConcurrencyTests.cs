@@ -1,5 +1,6 @@
 ﻿using Ico.Reader.Decoder;
 using Ico.Reader.Export;
+using Ico.Reader.Reading;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -192,7 +193,7 @@ public sealed class ConcurrencyTests
         {
             var index = i % references.Count;
             using var stream = File.OpenRead(TestFiles.Ico(Fixture));
-            results[i] = references[index].GetImageData(stream, decoder);
+            results[i] = ImageDataReader.Read(stream, references[index], decoder);
         });
 
         for (var i = 0; i < Iterations; i++)

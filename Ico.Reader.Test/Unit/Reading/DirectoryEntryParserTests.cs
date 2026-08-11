@@ -1,8 +1,8 @@
-﻿using Ico.Reader.Utils;
+﻿using Ico.Reader.Reading;
 
-namespace Ico.Reader.Test.Unit.Utils;
+namespace Ico.Reader.Test.Unit.Reading;
 
-public sealed class IcoDirectoryEntryUtilsTests
+public sealed class DirectoryEntryParserTests
 {
     private static Stream EntriesStream(byte[] ico)
     {
@@ -17,7 +17,7 @@ public sealed class IcoDirectoryEntryUtilsTests
             .AddIcon(48, 32, 8, new byte[10], colorCount: 16)
             .Build();
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromStream(EntriesStream(ico), IcoHeader.ReadFromStream(new MemoryStream(ico)));
+        var entries = DirectoryEntryParser.ReadFileEntries(EntriesStream(ico), IcoHeaderReader.Read(new MemoryStream(ico)));
 
         var entry = Assert.IsType<IconDirectoryEntry>(Assert.Single(entries));
         Assert.Equal(48, entry.Width);
@@ -38,7 +38,7 @@ public sealed class IcoDirectoryEntryUtilsTests
             .AddCursor(32, 32, hotspotX: 9, hotspotY: 17, new byte[4])
             .Build();
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromStream(EntriesStream(ico), IcoHeader.ReadFromStream(new MemoryStream(ico)));
+        var entries = DirectoryEntryParser.ReadFileEntries(EntriesStream(ico), IcoHeaderReader.Read(new MemoryStream(ico)));
 
         var entry = Assert.IsType<CursorDirectoryEntry>(Assert.Single(entries));
         Assert.Equal(9, entry.HotspotX);
@@ -55,7 +55,7 @@ public sealed class IcoDirectoryEntryUtilsTests
             .AddIcon(48, 48, 32, new byte[16])
             .Build();
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromStream(EntriesStream(ico), IcoHeader.ReadFromStream(new MemoryStream(ico)));
+        var entries = DirectoryEntryParser.ReadFileEntries(EntriesStream(ico), IcoHeaderReader.Read(new MemoryStream(ico)));
 
         Assert.Equal(3, entries.Length);
         Assert.Equal([16, 32, 48], entries.Select(x => (int)x.Width));
@@ -67,7 +67,7 @@ public sealed class IcoDirectoryEntryUtilsTests
     {
         var header = new IcoHeader { ImageType = 1, ImageCount = 0 };
 
-        Assert.Empty(IcoDirectoryEntryUtils.ReadEntriesFromStream(new MemoryStream(), header));
+        Assert.Empty(DirectoryEntryParser.ReadFileEntries(new MemoryStream(), header));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class IcoDirectoryEntryUtilsTests
     {
         var header = new IcoHeader { ImageType = 3, ImageCount = 1 };
 
-        Assert.Throws<NotSupportedException>(() => IcoDirectoryEntryUtils.ReadEntriesFromStream(new MemoryStream(new byte[16]), header));
+        Assert.Throws<NotSupportedException>(() => DirectoryEntryParser.ReadFileEntries(new MemoryStream(new byte[16]), header));
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class IcoDirectoryEntryUtilsTests
         var header = new IcoHeader { ImageType = 1, ImageCount = ushort.MaxValue };
         var stream = new MemoryStream(new byte[ushort.MaxValue * 16]);
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromStream(stream, header);
+        var entries = DirectoryEntryParser.ReadFileEntries(stream, header);
 
         Assert.Equal(ushort.MaxValue, entries.Length);
     }
@@ -97,7 +97,7 @@ public sealed class IcoDirectoryEntryUtilsTests
         var stream = new MemoryStream(ExeEntry(width: 64, height: 64, colorDepth: 32, imageSize: 4096, resourceId: 7));
         var header = new IcoHeader { ImageType = 1, ImageCount = 1 };
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(stream, header);
+        var entries = DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, header);
 
         var entry = Assert.Single(entries);
         Assert.Equal(64, entry.Width);
@@ -112,7 +112,7 @@ public sealed class IcoDirectoryEntryUtilsTests
         var stream = new MemoryStream(ExeEntry(width: 32, height: 64, colorDepth: 0, imageSize: 256, resourceId: 3));
         var header = new IcoHeader { ImageType = 2, ImageCount = 1 };
 
-        var entries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<CursorDirectoryEntry>(stream, header);
+        var entries = DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, header);
 
         var entry = Assert.Single(entries);
         Assert.Equal(32, entry.Width);
@@ -126,7 +126,7 @@ public sealed class IcoDirectoryEntryUtilsTests
         var stream = new MemoryStream(new byte[14]);
         var header = new IcoHeader { ImageType = 1, ImageCount = 1 };
 
-        Assert.Throws<ArgumentException>(() => IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<CursorDirectoryEntry>(stream, header));
+        Assert.Throws<ArgumentException>(() => DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, header));
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class IcoDirectoryEntryUtilsTests
         var header = new IcoHeader { ImageType = 1, ImageCount = ushort.MaxValue };
         var stream = new MemoryStream(new byte[ushort.MaxValue * 14]);
 
-        Assert.Equal(ushort.MaxValue, IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(stream, header).Length);
+        Assert.Equal(ushort.MaxValue, DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, header).Length);
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public sealed class IcoDirectoryEntryUtilsTests
     {
         var header = new IcoHeader { ImageType = 2, ImageCount = 1 };
 
-        Assert.Throws<ArgumentException>(() => IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(new MemoryStream(new byte[14]), header));
+        Assert.Throws<ArgumentException>(() => DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(new MemoryStream(new byte[14]), header));
     }
 
     private static byte[] ExeEntry(byte width, byte height, ushort colorDepth, uint imageSize, ushort resourceId)

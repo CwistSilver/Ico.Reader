@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 using Ico.Reader.Data;
-using Ico.Reader.Utils;
+using Ico.Reader.Reading;
 
 using PeDecoder;
 using PeDecoder.Models;
@@ -57,7 +57,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         {
             var icoDataEntry = icoResource[i];
             var fileOffset = icoDataEntry.GetFileOffset(resourceSection);
-            var reference = ImageReference.FromStream(stream, fileOffset, icoDataEntry.Size, icoDecoder);
+            var reference = ImageReferenceReader.FromStream(stream, fileOffset, icoDataEntry.Size, icoDecoder);
             if (reference is null)
                 return;
 
@@ -81,18 +81,24 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             };
 
             var fileOffset = icoResourceGroup[i].GetFileOffset(resourceSection);
-            icoGroup.Header = IcoHeader.ReadFromStream(stream, fileOffset);
+            icoGroup.Header = IcoHeaderReader.Read(stream, fileOffset);
 
-            stream.Position = fileOffset + 6;
-            var directoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<IconDirectoryEntry>(stream, icoGroup.Header).ToList();
+            stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
+            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, icoGroup.Header);
 
-            for (var x = 0; x < directoryEntries.Count; x++)
+            // A group entry names a resource id. Entries naming a resource this file does not carry
+            // are dropped, which is why the resolved entries are collected rather than removed in
+            // place: removing from the list being indexed would skip whatever shifted down into the
+            // vacated slot.
+            var directoryEntries = new List<IconDirectoryEntry>(parsedEntries.Length);
+            foreach (var entry in parsedEntries)
             {
-                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == directoryEntries[x].ImageOffset);
+                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == entry.ImageOffset);
                 if (reference is null)
-                    directoryEntries.RemoveAt(x);
-                else
-                    directoryEntries[x].RealImageOffset = reference.Offset;
+                    continue;
+
+                entry.RealImageOffset = reference.Offset;
+                directoryEntries.Add(entry);
             }
 
             if (directoryEntries.Count == 0)
@@ -124,7 +130,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             var hotspotY = MemoryMarshal.Read<ushort>(hotspotData.Slice(2, 2));
             var imageReferenceOffset = fileOffset + 4;
 
-            var reference = ImageReference.FromStream(stream, imageReferenceOffset, curDataEntry.Size, icoDecoder);
+            var reference = ImageReferenceReader.FromStream(stream, imageReferenceOffset, curDataEntry.Size, icoDecoder);
             if (reference is null)
                 return;
 
@@ -154,22 +160,21 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             };
 
             var fileOffset = curResourceGroup[i].GetFileOffset(resourceSection);
-            curGroup.Header = IcoHeader.ReadFromStream(stream, fileOffset);
-            stream.Position = fileOffset + 6;
-            var directoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromEXEStream<CursorDirectoryEntry>(stream, curGroup.Header).ToList();
+            curGroup.Header = IcoHeaderReader.Read(stream, fileOffset);
+            stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
+            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, curGroup.Header);
 
-            for (var x = 0; x < directoryEntries.Count; x++)
+            var directoryEntries = new List<CursorDirectoryEntry>(parsedEntries.Length);
+            foreach (var entry in parsedEntries)
             {
-                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == directoryEntries[x].ImageOffset);
+                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == entry.ImageOffset);
                 if (reference is null)
-                    directoryEntries.RemoveAt(x);
-                else
-                {
-                    var directoryEntry = directoryEntries[x];
-                    directoryEntry.RealImageOffset = reference.Offset;
-                    directoryEntry.HotspotX = reference.HotspotX;
-                    directoryEntry.HotspotY = reference.HotspotY;
-                }
+                    continue;
+
+                entry.RealImageOffset = reference.Offset;
+                entry.HotspotX = reference.HotspotX;
+                entry.HotspotY = reference.HotspotY;
+                directoryEntries.Add(entry);
             }
 
             if (directoryEntries.Count == 0)

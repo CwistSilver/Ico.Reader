@@ -1,3 +1,5 @@
+﻿using Ico.Reader.Reading;
+
 namespace Ico.Reader.Test.Unit.Data;
 
 public sealed class IcoHeaderTests
@@ -10,7 +12,7 @@ public sealed class IcoHeaderTests
             .AddIcon(32, 32, 32, new byte[8])
             .Build();
 
-        var header = IcoHeader.ReadFromStream(new MemoryStream(data));
+        var header = IcoHeaderReader.Read(new MemoryStream(data));
 
         Assert.Equal(0, header.Reserved);
         Assert.Equal(1, header.ImageType);
@@ -22,7 +24,7 @@ public sealed class IcoHeaderTests
     {
         var data = IcoBuilder.Cursor().AddCursor(16, 16, 4, 7, new byte[8]).Build();
 
-        var header = IcoHeader.ReadFromStream(new MemoryStream(data));
+        var header = IcoHeaderReader.Read(new MemoryStream(data));
 
         Assert.Equal(2, header.ImageType);
         Assert.Equal(1, header.ImageCount);
@@ -35,7 +37,7 @@ public sealed class IcoHeaderTests
         var padded = new byte[10 + ico.Length];
         ico.CopyTo(padded, 10);
 
-        var header = IcoHeader.ReadFromStream(new MemoryStream(padded), 10);
+        var header = IcoHeaderReader.Read(new MemoryStream(padded), 10);
 
         Assert.Equal(1, header.ImageType);
         Assert.Equal(1, header.ImageCount);

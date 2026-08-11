@@ -1,4 +1,5 @@
-using PeDecoder.Models;
+﻿using PeDecoder.Models;
+using PeDecoder.Reading;
 
 namespace Ico.Reader.Test.Integration;
 
@@ -81,7 +82,7 @@ public sealed class MalformedPeTests
     {
         using var stream = new MemoryStream(pe);
         var peHeader = new global::PeDecoder.PeDecoder().DecodePE(stream);
-        var sections = SectionHeader.ReadFromStream(stream, peHeader);
+        var sections = SectionHeaderReader.Read(stream, peHeader);
         var resourceTable = peHeader.Optional!.ResourceTable!;
 
         return (int)resourceTable.FindFileSectionHeader(sections).PointerToRawData;

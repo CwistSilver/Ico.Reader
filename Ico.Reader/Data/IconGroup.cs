@@ -1,6 +1,4 @@
-﻿using Ico.Reader.Utils;
-
-namespace Ico.Reader.Data;
+﻿namespace Ico.Reader.Data;
 
 /// <summary>
 /// Represents a collection of <see cref="IconDirectoryEntry"/> within an ICO file.

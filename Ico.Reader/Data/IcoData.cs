@@ -2,6 +2,7 @@
 
 using Ico.Reader.Data.Source;
 using Ico.Reader.Decoder;
+using Ico.Reader.Reading;
 
 namespace Ico.Reader.Data;
 
@@ -73,7 +74,7 @@ public sealed class IcoData
     public byte[] GetImage(ImageReference imageReference)
     {
         using var stream = _dataSource.GetStream();
-        return imageReference.GetImageData(stream, _icoDecoder);
+        return ImageDataReader.Read(stream, imageReference, _icoDecoder);
     }
 
     /// <summary>
@@ -154,7 +155,7 @@ public sealed class IcoData
     public async Task<byte[]> GetImageAsync(ImageReference imageReference, CancellationToken cancellationToken = default)
     {
         using var stream = _dataSource.GetStream(useAsync: true);
-        return await imageReference.GetImageDataAsync(stream, _icoDecoder, cancellationToken).ConfigureAwait(false);
+        return await ImageDataReader.ReadAsync(stream, imageReference, _icoDecoder, cancellationToken).ConfigureAwait(false);
     }
 
     #endregion

@@ -1,9 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
-
-using PeDecoder.Utils;
-
-namespace PeDecoder.Models;
+﻿namespace PeDecoder.Models;
 
 internal sealed class ResourceDirectoryEntry
 {
@@ -13,56 +8,4 @@ internal sealed class ResourceDirectoryEntry
     public uint IntegerID { get; set; }
     public uint DataEntryOffset { get; set; }
     public uint SubdirectoryOffset { get; set; }
-
-    public string DecodeName(Stream resourceStream, long streamOffset)
-    {
-        resourceStream.Position = streamOffset + NameOffset;
-
-        Span<byte> lengthBytes = stackalloc byte[2];
-        resourceStream.Read(lengthBytes);
-        var nameLength = MemoryMarshal.Read<ushort>(lengthBytes);
-
-        // A name is UTF-16 and its length is a ushort, so this can ask for 128 KB of stack.
-        return PooledStreamReader.Read(resourceStream, nameLength * 2, Encoding.Unicode.GetString);
-    }
-
-    public static ResourceDirectoryEntry[] ReadFromStream(Stream stream, ResourceDirectory resourceDirectory, long resourceDirectoryOffset)
-    {
-        stream.Position = resourceDirectoryOffset + ResourceDirectory.HeaderSize;
-        var total = resourceDirectory.NumberOfNamedEntries + resourceDirectory.NumberOfIdEntries;
-
-        return PooledStreamReader.Read(stream, total * ResourceDirectoryEntrySize, data =>
-        {
-            var entries = new ResourceDirectoryEntry[total];
-
-            for (var i = 0; i < total; i++)
-            {
-                var entrySpan = data.Slice(ResourceDirectoryEntrySize * i, ResourceDirectoryEntrySize);
-                entries[i] = new ResourceDirectoryEntry();
-                AddNameOrId(entries[i], entrySpan);
-                AddSubdirectoryOrDataEntry(entries[i], entrySpan);
-            }
-
-            return entries;
-        });
-    }
-
-    private static void AddNameOrId(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)
-    {
-        var nameOffsetOrIntegerID = MemoryMarshal.Read<uint>(entrySpan.Slice(0, 4));
-        if ((nameOffsetOrIntegerID & 0x80000000) != 0)
-            entry.NameOffset = nameOffsetOrIntegerID & 0x7FFFFFFF;
-        else
-            entry.IntegerID = nameOffsetOrIntegerID;
-    }
-
-    private static void AddSubdirectoryOrDataEntry(ResourceDirectoryEntry entry, ReadOnlySpan<byte> entrySpan)
-    {
-        var offset = MemoryMarshal.Read<uint>(entrySpan.Slice(4, 4));
-        var isSubdirectoryOffset = (offset & 0x80000000) != 0;
-        if (isSubdirectoryOffset)
-            entry.SubdirectoryOffset = offset & 0x7FFFFFFF;
-        else
-            entry.DataEntryOffset = offset;
-    }
 }

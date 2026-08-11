@@ -7,15 +7,6 @@ internal sealed class ImageDataDirectory
     public uint VirtualAddress { get; set; }
     public uint Size { get; set; }
 
-    public static ImageDataDirectory ReadFromSpan(ReadOnlySpan<byte> optionalHeaderSpan, int offset)
-    {
-        return new ImageDataDirectory()
-        {
-            VirtualAddress = MemoryMarshal.Read<uint>(optionalHeaderSpan.Slice(offset, 4)),
-            Size = MemoryMarshal.Read<uint>(optionalHeaderSpan.Slice(offset + 4, 4))
-        };
-    }
-
     public SectionHeader FindFileSectionHeader(IEnumerable<SectionHeader> sectionHeaders)
     {
         foreach (var section in sectionHeaders)

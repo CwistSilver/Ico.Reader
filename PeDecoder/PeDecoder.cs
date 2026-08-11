@@ -1,4 +1,5 @@
 ﻿using PeDecoder.Models;
+using PeDecoder.Reading;
 
 namespace PeDecoder;
 
@@ -13,13 +14,13 @@ internal interface IPeDecoder
 
 internal sealed class PeDecoder : IPeDecoder
 {
-    public MzHeader DecodeMZ(Stream stream) => MzHeader.ReadFromStream(stream);
+    public MzHeader DecodeMZ(Stream stream) => MzHeaderReader.Read(stream);
 
-    public bool IsPeFormat(Stream stream) => IsPeFormat(MzHeader.ReadFromStream(stream));
+    public bool IsPeFormat(Stream stream) => IsPeFormat(MzHeaderReader.Read(stream));
 
     public bool IsPeFormat(MzHeader mzHeader) => mzHeader.HasMzSignature;
 
-    public PeHeader DecodePE(Stream stream) => PeHeader.ReadFromStream(stream);
-    public ResourceDirectory? DecodeResourceDirectory(Stream stream, PeHeader peHeader) => ResourceDirectory.ReadFromStream(stream, peHeader);
+    public PeHeader DecodePE(Stream stream) => PeHeaderReader.Read(stream);
+    public ResourceDirectory? DecodeResourceDirectory(Stream stream, PeHeader peHeader) => ResourceReader.Read(stream, peHeader);
 }
 

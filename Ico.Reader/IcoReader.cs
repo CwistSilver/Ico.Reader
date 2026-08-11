@@ -1,6 +1,6 @@
 ﻿using Ico.Reader.Data;
 using Ico.Reader.Data.Source;
-using Ico.Reader.Utils;
+using Ico.Reader.Reading;
 
 namespace Ico.Reader;
 
@@ -177,7 +177,7 @@ public sealed class IcoReader
     {
         // The stream may belong to the caller, so an unreadable file is reported by returning null
         // and never by closing it.
-        var header = IcoHeader.ReadFromStream(stream);
+        var header = IcoHeaderReader.Read(stream);
         var decodedicoResult = GetDecodedIcoResult(header);
         if (decodedicoResult is null)
             return null;
@@ -185,7 +185,7 @@ public sealed class IcoReader
         if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0)
             return null;
 
-        decodedicoResult.IcoGroups[0].DirectoryEntries = IcoDirectoryEntryUtils.ReadEntriesFromStream(stream, decodedicoResult.IcoGroups[0].Header!);
+        decodedicoResult.IcoGroups[0].DirectoryEntries = DirectoryEntryParser.ReadFileEntries(stream, decodedicoResult.IcoGroups[0].Header!);
         decodedicoResult.References = new List<ImageReference>(decodedicoResult.IcoGroups[0].DirectoryEntries!.Length);
         for (var i = 0; i < decodedicoResult.IcoGroups[0].DirectoryEntries!.Length; i++)
         {
@@ -196,7 +196,7 @@ public sealed class IcoReader
                     return null;
             }
 
-            var imageReference = ImageReference.FromIcoDirectoryEntry(stream, decodedicoResult.IcoGroups[0].DirectoryEntries![i], _icoReaderConfiguration.IcoDecoder);
+            var imageReference = ImageReferenceReader.FromDirectoryEntry(stream, decodedicoResult.IcoGroups[0].DirectoryEntries![i], _icoReaderConfiguration.IcoDecoder);
             if (imageReference is null)
                 return null;
 
