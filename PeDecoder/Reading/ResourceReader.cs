@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using PeDecoder.Models;
@@ -12,6 +13,9 @@ namespace PeDecoder.Reading;
 /// </summary>
 internal static class ResourceReader
 {
+    /// <summary>The tree level holding one directory per resource type.</summary>
+    private const int ResourceTypeLevel = 2;
+
     public static ResourceDirectory? Read(Stream stream, PeHeader peHeader)
     {
         if (peHeader.Optional is null || peHeader.Optional.ResourceTable is null)
@@ -23,10 +27,8 @@ internal static class ResourceReader
         long resourceTableOffset = rsrcSection.GetFileOffset(peHeader.Optional.ResourceTable.VirtualAddress);
 
         var rootResourceDirectory = ReadResourceDirectory(stream, resourceTableOffset, rsrcSection, [], 1);
-        rootResourceDirectory.Name = ResourceDirectory.RootName;
-        rootResourceDirectory.Section = rsrcSection;
 
-        return rootResourceDirectory;
+        return rootResourceDirectory with { Name = ResourceDirectory.RootName, Section = rsrcSection };
     }
 
     private static ResourceDirectory ReadResourceDirectory(Stream stream, long virtualAddress, SectionHeader rsrcSection, HashSet<long> visited, int level)
@@ -37,12 +39,24 @@ internal static class ResourceReader
         if (level >= ResourceDirectory.MaxDepth || !visited.Add(virtualAddress))
             return resourceDirectory;
 
-        var resourceDirectoryEntries = ReadDirectoryEntries(stream, resourceDirectory, virtualAddress);
+        var subdirectories = new List<ResourceDirectory>();
+        var dataEntries = new List<ResourceDataEntry>();
 
-        foreach (var entry in resourceDirectoryEntries)
-            ProcessResourceDirectoryEntry(stream, resourceDirectory, entry, rsrcSection, visited);
+        foreach (var entry in ReadDirectoryEntries(stream, resourceDirectory, virtualAddress))
+        {
+            if (entry.SubdirectoryOffset == 0)
+            {
+                dataEntries.Add(ReadDataEntry(stream, rsrcSection.PointerToRawData, entry.DataEntryOffset));
+                continue;
+            }
 
-        return resourceDirectory;
+            var childAddress = rsrcSection.PointerToRawData + entry.SubdirectoryOffset;
+            var child = ReadResourceDirectory(stream, childAddress, rsrcSection, visited, level + 1);
+
+            subdirectories.Add(NameFromParentEntry(child, entry, stream, rsrcSection));
+        }
+
+        return resourceDirectory with { Subdirectories = subdirectories, DataEntries = dataEntries };
     }
 
     private static ResourceDirectory ReadResourceDirectoryBase(Stream stream, long virtualAddress, int level)
@@ -66,40 +80,24 @@ internal static class ResourceReader
         return resourceDirectory;
     }
 
-    private static void ProcessResourceDirectoryEntry(Stream stream, ResourceDirectory directory, ResourceDirectoryEntry entry, SectionHeader rsrcSection, HashSet<long> visited)
-    {
-        if (entry.SubdirectoryOffset != 0)
-        {
-            var newAddress = rsrcSection.PointerToRawData + entry.SubdirectoryOffset;
-            var subResourceDirectory = ReadResourceDirectory(stream, newAddress, rsrcSection, visited, directory.Level + 1);
-            SetName(stream, subResourceDirectory, entry, rsrcSection);
-
-            directory.Subdirectories.Add(subResourceDirectory);
-        }
-        else
-        {
-            var dataEntry = ReadDataEntry(stream, rsrcSection.PointerToRawData, entry.DataEntryOffset);
-            directory.DataEntries.Add(dataEntry);
-        }
-    }
-
-    private static void SetName(Stream stream, ResourceDirectory directory, ResourceDirectoryEntry entry, SectionHeader rsrcSection)
+    /// <summary>
+    /// A directory is named by the entry in its parent that points at it: an explicit name, a
+    /// resource type at the second level, or an id below that. At the id level that id also names
+    /// the resource itself, so it is stamped onto the data entries.
+    /// </summary>
+    private static ResourceDirectory NameFromParentEntry(ResourceDirectory directory, ResourceDirectoryEntry entry, Stream stream, SectionHeader rsrcSection)
     {
         if (entry.NameOffset != 0)
-        {
-            directory.Name = DecodeName(entry, stream, rsrcSection.PointerToRawData);
-        }
-        else if (directory.Level == 2)
-        {
-            directory.Name = ((ResourceType)entry.IntegerID).ToString();
-        }
-        else
-        {
-            directory.Name = entry.IntegerID.ToString();
-            for (var i = 0; i < directory.DataEntries.Count; i++)
-                directory.DataEntries[i].ID = entry.IntegerID;
-        }
+            return directory with { Name = DecodeName(entry, stream, rsrcSection.PointerToRawData) };
 
+        if (directory.Level == ResourceTypeLevel)
+            return directory with { Name = ((ResourceType)entry.IntegerID).ToString() };
+
+        return directory with
+        {
+            Name = entry.IntegerID.ToString(CultureInfo.InvariantCulture),
+            DataEntries = [.. directory.DataEntries.Select(x => x with { ID = entry.IntegerID })]
+        };
     }
 
     private static string DecodeName(ResourceDirectoryEntry entry, Stream resourceStream, long streamOffset)

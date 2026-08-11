@@ -1,6 +1,6 @@
 ﻿namespace PeDecoder.Models;
 
-internal sealed class ResourceDirectory
+internal sealed record ResourceDirectory
 {
     internal const int HeaderSize = 16;
 
@@ -13,23 +13,23 @@ internal sealed class ResourceDirectory
 
     internal const string RootName = "Root";
 
-    public string Name { get; set; } = string.Empty;
-    public int Level { get; set; }
-    public uint Characteristics { get; set; }
-    public DateTime TimeDateStamp { get; set; }
-    public ushort MajorVersion { get; set; }
-    public ushort MinorVersion { get; set; }
-    public ushort NumberOfNamedEntries { get; set; }
-    public ushort NumberOfIdEntries { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public int Level { get; init; }
+    public uint Characteristics { get; init; }
+    public DateTime TimeDateStamp { get; init; }
+    public ushort MajorVersion { get; init; }
+    public ushort MinorVersion { get; init; }
+    public ushort NumberOfNamedEntries { get; init; }
+    public ushort NumberOfIdEntries { get; init; }
 
-    public List<ResourceDirectory> Subdirectories { get; set; } = [];
-    public List<ResourceDataEntry> DataEntries { get; set; } = [];
+    public List<ResourceDirectory> Subdirectories { get; init; } = [];
+    public List<ResourceDataEntry> DataEntries { get; init; } = [];
 
     /// <summary>
     /// The section the resource tree was read from, kept so that resolving a data entry to a file
     /// offset does not have to re-read the section table. Only set on the root directory.
     /// </summary>
-    public SectionHeader? Section { get; set; }
+    public SectionHeader? Section { get; init; }
 
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
 

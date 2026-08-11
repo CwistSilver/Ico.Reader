@@ -40,7 +40,7 @@ internal static class ImageReferenceReader
         };
 
         return directoryEntry is CursorDirectoryEntry cursor
-            ? imageReference.AsCursor(cursor.HotspotX, cursor.HotspotY)
+            ? imageReference with { IcoType = IcoType.Cursor, HotspotX = cursor.HotspotX, HotspotY = cursor.HotspotY }
             : imageReference;
     }
 
@@ -51,7 +51,9 @@ internal static class ImageReferenceReader
     /// <returns>A reference, or null when the image is in a format no decoder recognises.</returns>
     public static ImageReference? FromStream(Stream stream, uint offset, uint size, IIcoDecoder icoDecoder)
     {
-        return ReadMetadata(stream, offset, icoDecoder)?.WithLocation(offset, size);
+        var imageReference = ReadMetadata(stream, offset, icoDecoder);
+
+        return imageReference is null ? null : imageReference with { Offset = offset, Size = size };
     }
 
     private static ImageReference? ReadMetadata(Stream stream, uint offset, IIcoDecoder icoDecoder)

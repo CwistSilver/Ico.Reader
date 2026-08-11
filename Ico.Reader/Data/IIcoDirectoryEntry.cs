@@ -12,35 +12,35 @@ public interface IIcoDirectoryEntry
     /// <summary>
     /// The width of the ico image in pixels; 0 means image width is 256 pixels.
     /// </summary>
-    byte Width { get; init; }
+    byte Width { get; }
 
     /// <summary>
     /// The height of the ico image in pixels; 0 means image height is 256 pixels.
     /// </summary>
-    byte Height { get; init; }
+    byte Height { get; }
 
     /// <summary>
     /// The number of color planes; typically 0 or 1 for icos.
     /// </summary>
-    ushort Planes { get; init; }
+    ushort Planes { get; }
 
     /// <summary>
     /// The bit depth of the ico image.
     /// </summary>
-    ushort ColorDepth { get; init; }
+    ushort ColorDepth { get; }
 
     /// <summary>
     /// The size of the ico image data in bytes.
     /// </summary>
-    uint ImageSize { get; init; }
+    uint ImageSize { get; }
 
     /// <summary>
     /// The offset where the ico image data begins in the file.
     /// </summary>
-    uint ImageOffset { get; init; }
+    uint ImageOffset { get; }
 
     /// <summary>
     /// The real offset of the image data in the file.
     /// </summary>
-    uint RealImageOffset { get; init; }
+    uint RealImageOffset { get; }
 }

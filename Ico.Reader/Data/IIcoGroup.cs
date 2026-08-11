@@ -10,7 +10,7 @@ public interface IIcoGroup<T> where T : IIcoDirectoryEntry
     /// <summary>
     /// The identifier for the ico group, used to distinguish between different groups within a source.
     /// </summary>
-    string Name { get; set; }
+    string Name { get; }
 
     /// <summary>
     /// The type of ico group, either Icon or Cursor. <see cref="IcoType.Icon" /> or <see cref="IcoType.Cursor" />
@@ -20,7 +20,7 @@ public interface IIcoGroup<T> where T : IIcoDirectoryEntry
     /// <summary>
     /// The header information for the ico group, containing details about the ico format and the number of images.
     /// </summary>
-    IcoHeader Header { get; set; }
+    IcoHeader Header { get; }
 
     /// <summary>
     /// The number of directory entries (icos) within the group. Returns 0 if there are no entries.
@@ -35,6 +35,6 @@ public interface IIcoGroup<T> where T : IIcoDirectoryEntry
     /// or <see cref="CursorDirectoryEntry"/> for CUR files.
     /// </para>
     /// </summary>
-    T[] DirectoryEntries { get; set; }
+    T[] DirectoryEntries { get; }
 }
 

@@ -6,7 +6,7 @@
 public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
 {
     /// <summary> <inheritdoc/> </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; init; }
 
     /// <summary>
     /// Specifies the type of the ICO group.
@@ -17,34 +17,18 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
     public IcoType IcoType => IcoType.Icon;
 
     /// <summary> <inheritdoc/> </summary>
-    public IcoHeader Header { get; set; } = null!;
+    public required IcoHeader Header { get; init; }
 
     /// <summary>
     /// An array of <see cref="IconDirectoryEntry"/> objects, each representing an icon within the group.
     /// This array contains metadata about individual icons.
     /// </summary>
-    public IconDirectoryEntry[] DirectoryEntries { get; set; } = Array.Empty<IconDirectoryEntry>();
+    public required IconDirectoryEntry[] DirectoryEntries { get; init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public int Size => DirectoryEntries?.Length ?? 0;
+    public int Size => DirectoryEntries.Length;
 
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries
-    {
-        get => DirectoryEntries;
-        set
-        {
-            var cursorDirectoryEntries = new IconDirectoryEntry[value.Length];
-
-            for (var i = 0; i < value.Length; i++)
-            {
-                if (value[i] is IconDirectoryEntry entry)
-                    cursorDirectoryEntries[i] = entry;
-                else
-                    throw new ArgumentException("Invalid entry type", nameof(value));
-            }
-            DirectoryEntries = cursorDirectoryEntries;
-        }
-    }
+    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
 
     public override string ToString() => $"[{nameof(IconGroup)}] {Name} ({Size})";
 }

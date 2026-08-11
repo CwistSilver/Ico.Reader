@@ -9,6 +9,8 @@ namespace Ico.Reader;
 /// </summary>
 public sealed class IcoReader
 {
+    private const string DefaultGroupName = "1";
+
     private readonly IcoReaderConfiguration _icoReaderConfiguration;
 
     /// <summary>
@@ -178,52 +180,50 @@ public sealed class IcoReader
         // The stream may belong to the caller, so an unreadable file is reported by returning null
         // and never by closing it.
         var header = IcoHeaderReader.Read(stream);
-        var decodedicoResult = GetDecodedIcoResult(header);
-        if (decodedicoResult is null)
+        if (header.Reserved != 0)
             return null;
 
-        if (decodedicoResult.IcoGroups[0].Header!.Reserved != 0)
-            return null;
-
-        decodedicoResult.IcoGroups[0].DirectoryEntries = DirectoryEntryParser.ReadFileEntries(stream, decodedicoResult.IcoGroups[0].Header!);
-        decodedicoResult.References = new List<ImageReference>(decodedicoResult.IcoGroups[0].DirectoryEntries!.Length);
-        for (var i = 0; i < decodedicoResult.IcoGroups[0].DirectoryEntries!.Length; i++)
+        var originFileType = header.ImageType switch
         {
-            if (header.ImageType == IconDirectoryEntry.ImageType)
-            {
-                var icoHeader = (IconDirectoryEntry)decodedicoResult.IcoGroups[0].DirectoryEntries![i];
-                if (icoHeader.Reserved != 0)
-                    return null;
-            }
+            IconDirectoryEntry.ImageType => IcoOriginFileType.Ico,
+            CursorDirectoryEntry.ImageType => IcoOriginFileType.Cur,
+            _ => (IcoOriginFileType?)null
+        };
 
-            var imageReference = ImageReferenceReader.FromDirectoryEntry(stream, decodedicoResult.IcoGroups[0].DirectoryEntries![i], _icoReaderConfiguration.IcoDecoder);
+        if (originFileType is null)
+            return null;
+
+        var directoryEntries = DirectoryEntryParser.ReadFileEntries(stream, header);
+        var references = new List<ImageReference>(directoryEntries.Length);
+
+        for (var i = 0; i < directoryEntries.Length; i++)
+        {
+            if (directoryEntries[i] is IconDirectoryEntry { Reserved: not 0 })
+                return null;
+
+            var imageReference = ImageReferenceReader.FromDirectoryEntry(stream, directoryEntries[i], _icoReaderConfiguration.IcoDecoder);
             if (imageReference is null)
                 return null;
 
-            decodedicoResult.References.Add(imageReference.WithId(i));
+            references.Add(imageReference with { Id = i });
         }
 
-        return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedicoResult);
+        var decodedIcoResult = new DecodedIcoResult
+        {
+            OriginFileType = originFileType.Value,
+            References = references,
+            IcoGroups = [CreateGroup(header, directoryEntries)]
+        };
+
+        return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedIcoResult);
     }
 
-    private DecodedIcoResult? GetDecodedIcoResult(IcoHeader header)
-    {
-        DecodedIcoResult decodedicoResult;
-        if (header.ImageType == IconDirectoryEntry.ImageType)
-        {
-            decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Ico };
-            decodedicoResult.IcoGroups.Add(new IconGroup() { Name = "1", Header = header });
-        }
-        else if (header.ImageType == CursorDirectoryEntry.ImageType)
-        {
-            decodedicoResult = new DecodedIcoResult { OriginFileType = IcoOriginFileType.Cur };
-            decodedicoResult.IcoGroups.Add(new CursorGroup() { Name = "1", Header = header });
-        }
-        else
-        {
-            return null;
-        }
-
-        return decodedicoResult;
-    }
+    /// <summary>
+    /// A standalone ICO or CUR file has no grouping of its own, so every image is placed in a single
+    /// group named "1" to match how groups are exposed for EXE and DLL sources.
+    /// </summary>
+    private static IIcoGroup CreateGroup(IcoHeader header, IIcoDirectoryEntry[] directoryEntries)
+        => header.ImageType == IconDirectoryEntry.ImageType
+            ? new IconGroup { Name = DefaultGroupName, Header = header, DirectoryEntries = [.. directoryEntries.Cast<IconDirectoryEntry>()] }
+            : new CursorGroup { Name = DefaultGroupName, Header = header, DirectoryEntries = [.. directoryEntries.Cast<CursorDirectoryEntry>()] };
 }

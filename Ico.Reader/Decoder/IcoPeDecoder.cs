@@ -61,7 +61,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 return;
 
-            decodedIcoResult.References.Add(reference.WithId((int)icoDataEntry.ID));
+            decodedIcoResult.References.Add(reference with { Id = (int)icoDataEntry.ID });
         }
 
         var icoResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_ICON.ToString());
@@ -74,16 +74,11 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         for (var i = 0; i < icoResourceGroup.Length; i++)
         {
-            var icoGroup = new IconGroup()
-            {
-                Name = icoResourceGroupDirectory.Subdirectories[i].Name
-            };
-
             var fileOffset = icoResourceGroup[i].GetFileOffset(resourceSection);
-            icoGroup.Header = IcoHeaderReader.Read(stream, fileOffset);
+            var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
 
             stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
-            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, icoGroup.Header);
+            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, groupHeader);
 
             // A group entry names a resource id. Entries naming a resource this file does not carry
             // are dropped, which is why the resolved entries are collected rather than removed in
@@ -96,14 +91,18 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
                 if (reference is null)
                     continue;
 
-                directoryEntries.Add(entry.WithRealImageOffset(reference.Offset));
+                directoryEntries.Add(entry with { RealImageOffset = reference.Offset });
             }
 
             if (directoryEntries.Count == 0)
                 continue;
 
-            icoGroup.DirectoryEntries = directoryEntries.ToArray();
-            decodedIcoResult.IcoGroups.Add(icoGroup as IIcoGroup);
+            decodedIcoResult.IcoGroups.Add(new IconGroup
+            {
+                Name = icoResourceGroupDirectory.Subdirectories[i].Name,
+                Header = groupHeader,
+                DirectoryEntries = [.. directoryEntries]
+            });
         }
     }
 
@@ -132,7 +131,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 return;
 
-            decodedIcoResult.References.Add(reference.WithId((int)curDataEntry.ID).AsCursor(hotspotX, hotspotY));
+            decodedIcoResult.References.Add(reference with { Id = (int)curDataEntry.ID, IcoType = IcoType.Cursor, HotspotX = hotspotX, HotspotY = hotspotY });
         }
 
         var curResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_CURSOR.ToString());
@@ -147,15 +146,11 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         for (var i = 0; i < curResourceGroup.Length; i++)
         {
-            var curGroup = new CursorGroup()
-            {
-                Name = curResourceGroupDirectory.Subdirectories[i].Name
-            };
-
             var fileOffset = curResourceGroup[i].GetFileOffset(resourceSection);
-            curGroup.Header = IcoHeaderReader.Read(stream, fileOffset);
+            var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
+
             stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
-            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, curGroup.Header);
+            var parsedEntries = DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, groupHeader);
 
             var directoryEntries = new List<CursorDirectoryEntry>(parsedEntries.Length);
             foreach (var entry in parsedEntries)
@@ -164,14 +159,18 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
                 if (reference is null)
                     continue;
 
-                directoryEntries.Add(entry.WithResolvedResource(reference.Offset, reference.HotspotX, reference.HotspotY));
+                directoryEntries.Add(entry with { RealImageOffset = reference.Offset, HotspotX = reference.HotspotX, HotspotY = reference.HotspotY });
             }
 
             if (directoryEntries.Count == 0)
                 continue;
 
-            curGroup.DirectoryEntries = directoryEntries.ToArray();
-            decodedIcoResult.IcoGroups.Add(curGroup);
+            decodedIcoResult.IcoGroups.Add(new CursorGroup
+            {
+                Name = curResourceGroupDirectory.Subdirectories[i].Name,
+                Header = groupHeader,
+                DirectoryEntries = [.. directoryEntries]
+            });
         }
     }
 

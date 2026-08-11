@@ -1,12 +1,12 @@
 ﻿namespace PeDecoder.Models;
 
-internal sealed class ResourceDataEntry
+internal sealed record ResourceDataEntry
 {
-    public uint ID { get; set; }
-    public uint DataRVA { get; set; }
-    public uint Size { get; set; }
-    public uint Codepage { get; set; }
-    public uint Reserved { get; set; }
+    public uint ID { get; init; }
+    public uint DataRVA { get; init; }
+    public uint Size { get; init; }
+    public uint Codepage { get; init; }
+    public uint Reserved { get; init; }
 
     /// <summary>
     /// Resolves this entry's virtual address to a file offset within the resource section.

@@ -7,14 +7,14 @@ public sealed class DecodedIcoResult
     /// <summary>
     /// The origin file type of the ico file.
     /// </summary>
-    public IcoOriginFileType OriginFileType { get; set; }
+    public IcoOriginFileType OriginFileType { get; init; }
 
     /// <summary>
     /// An array of image references, each pointing to an image extracted from the ico file.
     /// </summary>
-    public List<ImageReference> References { get; set; } = [];
+    public List<ImageReference> References { get; init; } = [];
     /// <summary>
     /// An array of ico groups, categorizing the extracted images into groups based on certain criteria, such as resolution or color depth.
     /// </summary>
-    public List<IIcoGroup> IcoGroups { get; set; } = [];
+    public List<IIcoGroup> IcoGroups { get; init; } = [];
 }

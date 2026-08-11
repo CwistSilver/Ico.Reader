@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Ico.Reader.Test.Unit.Data;
 
@@ -21,6 +21,9 @@ public sealed class ImmutabilityTests
         typeof(CursorDirectoryEntry),
         typeof(IcoHeader),
         typeof(BmpInfoHeader),
+        typeof(IconGroup),
+        typeof(CursorGroup),
+        typeof(DecodedIcoResult),
     ];
 
     [Theory]

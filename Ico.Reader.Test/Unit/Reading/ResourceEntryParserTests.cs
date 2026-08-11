@@ -118,15 +118,23 @@ public sealed class ResourceEntryParserTests
         Assert.Equal(ushort.MaxValue, DirectoryEntryParser.ReadResourceEntries(stream, header).Length);
     }
 
-
-
     [Fact]
     public void Size_ReflectsTheEntryCount()
     {
-        var group = new IconGroup { DirectoryEntries = [new IconDirectoryEntry(), new IconDirectoryEntry()] };
+        var header = new IcoHeader { ImageType = 1, ImageCount = 2 };
+        var group = new IconGroup
+        {
+            Name = "1",
+            Header = header,
+            DirectoryEntries = [new IconDirectoryEntry(), new IconDirectoryEntry()]
+        };
 
         Assert.Equal(2, group.Size);
         Assert.Equal(IcoType.Icon, group.IcoType);
-        Assert.Equal(IcoType.Cursor, new CursorGroup().IcoType);
+
+        var cursorGroup = new CursorGroup { Name = "1", Header = header, DirectoryEntries = [] };
+
+        Assert.Equal(0, cursorGroup.Size);
+        Assert.Equal(IcoType.Cursor, cursorGroup.IcoType);
     }
 }

@@ -32,7 +32,8 @@ public sealed class ResourceDirectoryTests
     public void GetResources_MatchesTheWholeNameRatherThanASubstring()
     {
         var root = Root("RT_ICON_BACKUP", "RT_ICON");
-        root.Subdirectories[1].Subdirectories[0].DataEntries[0].ID = 42;
+        var languageDirectory = root.Subdirectories[1].Subdirectories[0];
+        languageDirectory.DataEntries[0] = languageDirectory.DataEntries[0] with { ID = 42 };
 
         var resources = root.GetResources("RT_ICON");
 
