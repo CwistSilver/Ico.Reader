@@ -114,13 +114,16 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         decodedIcoResult.References.Capacity += curResource.Length;
 
+        // The resource count comes from the file, so allocating per iteration would let a crafted
+        // input exhaust the stack.
+        Span<byte> hotspotData = stackalloc byte[4];
+
         for (var i = 0; i < curResource.Length; i++)
         {
             var curDataEntry = curResource[i];
             var fileOffset = curDataEntry.GetFileOffset(resourceSection);
 
             stream.Position = fileOffset;
-            Span<byte> hotspotData = stackalloc byte[4];
             stream.Read(hotspotData);
 
             var hotspotX = MemoryMarshal.Read<ushort>(hotspotData.Slice(0, 2));
