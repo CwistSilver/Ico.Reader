@@ -39,13 +39,9 @@ public sealed record IconDirectoryEntry : IIcoDirectoryEntry
     public uint ImageOffset { get; internal init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint RealImageOffset { get; internal init; }
-
-    /// <summary>
-    /// Returns a copy whose <see cref="RealImageOffset"/> points at the resolved image.
-    /// </summary>
     /// <remarks>
     /// Inside a PE, <see cref="ImageOffset"/> holds a resource id rather than a position, so the
     /// real offset is only known once the resource it names has been located.
     /// </remarks>
+    public uint RealImageOffset { get; internal init; }
 }

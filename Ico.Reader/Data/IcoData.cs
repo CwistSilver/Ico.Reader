@@ -116,6 +116,7 @@ public sealed class IcoData
     /// Retrieves the image data for a specified image index asynchronously.
     /// </summary>
     /// <param name="imageReferenceIndex">The index of the image to retrieve.</param>
+    /// <param name="cancellationToken">A token that cancels the read.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
@@ -128,6 +129,7 @@ public sealed class IcoData
     /// <param name="groupName">The name of the ICO group.</param>
     /// <param name="entryIndex">The index of the entry within the group to retrieve.</param>
     /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
+    /// <param name="cancellationToken">A token that cancels the read.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
@@ -139,6 +141,7 @@ public sealed class IcoData
     /// </summary>
     /// <param name="group">The ICO group that contains the image entry.</param>
     /// <param name="entryIndex">The index of the entry within the group.</param>
+    /// <param name="cancellationToken">A token that cancels the read.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
@@ -149,6 +152,7 @@ public sealed class IcoData
     /// Retrieves the image data for a specified image reference asynchronously.
     /// </summary>
     /// <param name="imageReference">The image reference that contains metadata for the image.</param>
+    /// <param name="cancellationToken">A token that cancels the read.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>

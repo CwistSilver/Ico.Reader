@@ -1,6 +1,6 @@
 @echo off
 
-set /p VERSION=Enter package version: 
+set /p VERSION=Enter package version:
 
 REM Strip leading "v" if entered, e.g. v1.2.3 -> 1.2.3
 if /i "%VERSION:~0,1%"=="v" set "VERSION=%VERSION:~1%"

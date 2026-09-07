@@ -2,7 +2,7 @@
 
 namespace CommonShims;
 
-public static class EncodingExtensions
+internal static class EncodingExtensions
 {
     public static string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
     {

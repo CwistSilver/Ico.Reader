@@ -7,11 +7,9 @@
   -->
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <IsPackable>false</IsPackable>
-    <Win32Resource>$(MSBuildThisFileDirectory)..\Ico.Reader.Test\Resources\Pe\Fixtures.res</Win32Resource>
+    <UsePolyfills>false</UsePolyfills>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Win32Resource>$(MSBuildThisFileDirectory)..\Ico.Reader.Test\Resources\Pe\Fixtures.res</Win32Resource>
     <NoWarn>$(NoWarn);CS8021</NoWarn>
   </PropertyGroup>
 

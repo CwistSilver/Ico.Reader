@@ -17,7 +17,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "8.0.x"
+          # 8.0.x supplies the runtime the test project targets; global.json picks the build SDK.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+          global-json-file: global.json
 
       - name: Restore
         run: dotnet restore Ico.Reader.Test/Ico.Reader.Test.csproj

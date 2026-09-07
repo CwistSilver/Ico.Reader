@@ -1,6 +1,6 @@
 ﻿namespace CommonShims;
 
-public static class DictionaryExtensions
+internal static class DictionaryExtensions
 {
     public static bool TryAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
     {

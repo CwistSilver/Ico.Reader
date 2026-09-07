@@ -22,6 +22,7 @@ public sealed class BmpDecoder : IDecoder
     /// Initializes a new instance of the <see cref="BmpDecoder"/> class with a specific collection of BMP decoders, each supporting different bit depths.
     /// </summary>
     /// <param name="decoders">The collection of decoders for handling various BMP bit depths.</param>
+    /// <param name="pngCreator">Creates the PNG wrapper returned for decoded BMP images.</param>
     public BmpDecoder(IEnumerable<IIcoBmpDecoder> decoders, IPngCreator pngCreator)
     {
         _pngCreator = pngCreator;

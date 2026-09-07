@@ -40,13 +40,9 @@ public sealed record CursorDirectoryEntry : IIcoDirectoryEntry
     public uint ImageOffset { get; internal init; }
 
     /// <summary> <inheritdoc/> </summary>
-    public uint RealImageOffset { get; internal init; }
-
-    /// <summary>
-    /// Returns a copy carrying the resolved image offset and the hotspot read from the resource.
-    /// </summary>
     /// <remarks>
     /// Inside a PE, <see cref="ImageOffset"/> holds a resource id rather than a position, and the
     /// hotspot is a prefix on the resource data rather than a field of the group directory.
     /// </remarks>
+    public uint RealImageOffset { get; internal init; }
 }

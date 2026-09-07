@@ -2,7 +2,7 @@
 
 namespace CommonShims;
 
-public static class StreamExtensions
+internal static class StreamExtensions
 {
     public static int Read(this Stream stream, Span<byte> buffer)
     {

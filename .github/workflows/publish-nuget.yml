@@ -24,14 +24,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "8.0.x"
+          global-json-file: global.json
 
       - name: Restore
         run: dotnet restore Ico.Reader/Ico.Reader.csproj
 
       - name: Build
-        run: dotnet build Ico.Reader/Ico.Reader.csproj
-          -c Release --no-restore -p:GeneratePackageOnBuild=false
+        run: dotnet build Ico.Reader/Ico.Reader.csproj -c Release --no-restore
 
       - name: Pack
         run: dotnet pack Ico.Reader/Ico.Reader.csproj -c
@@ -41,9 +40,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v3
         with:
-          files: |
-            ./artifacts/*.nupkg
-            ./artifacts/*.snupkg
+          files: ./artifacts/*.nupkg
 
       - name: NuGet login
         uses: NuGet/login@v1
@@ -55,9 +52,3 @@ jobs:
         run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{
           steps.login.outputs.NUGET_API_KEY }}" --source
           "https://api.nuget.org/v3/index.json" --skip-duplicate
-
-      - name: Publish symbols to NuGet.org
-        run: dotnet nuget push "./artifacts/*.snupkg" --api-key "${{
-          steps.login.outputs.NUGET_API_KEY }}" --source
-          "https://api.nuget.org/v3/index.json"
-        continue-on-error: true

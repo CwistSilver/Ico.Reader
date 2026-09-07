@@ -1,8 +1,8 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 
 namespace Ico.Reader.Extensions;
 
-public static class BigEndianBinaryWriterExtensions
+internal static class BigEndianBinaryWriterExtensions
 {
     public static void WriteUInt32BigEndian(this BinaryWriter writer, uint value)
     {
@@ -18,4 +18,3 @@ public static class BigEndianBinaryWriterExtensions
         writer.Write(span);
     }
 }
-

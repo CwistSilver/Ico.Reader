@@ -2,7 +2,7 @@
 
 namespace CommonShims;
 
-public static class BinaryWriterExtensions
+internal static class BinaryWriterExtensions
 {
     public static void Write(this BinaryWriter writer, ReadOnlySpan<byte> buffer)
     {
