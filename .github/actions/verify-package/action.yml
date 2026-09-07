@@ -1,0 +1,76 @@
+name: Verify NuGet Package
+description: Checks a packed library before it is published, so a broken package cannot reach NuGet.org
+
+inputs:
+  artifacts-dir:
+    description: Directory holding the .nupkg and .snupkg
+    required: true
+  package-id:
+    description: Package id, used to locate the artifacts (e.g. Ico.Reader)
+    required: true
+  version:
+    description: Version the package was built with (without v prefix)
+    required: true
+
+outputs:
+  package-path:
+    description: Absolute path of the verified .nupkg
+    value: ${{ steps.verify.outputs.package-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verify package
+      id: verify
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+
+        $dir = [IO.Path]::GetFullPath([IO.Path]::Combine($env:GITHUB_WORKSPACE, '${{ inputs.artifacts-dir }}'))
+        $id = '${{ inputs.package-id }}'
+        $version = '${{ inputs.version }}'
+
+        $nupkg = Get-ChildItem -Path $dir -Filter "$id.$version.nupkg" -ErrorAction SilentlyContinue
+        if (-not $nupkg) { throw "No $id.$version.nupkg in $dir." }
+
+        $snupkg = Get-ChildItem -Path $dir -Filter "$id.$version.snupkg" -ErrorAction SilentlyContinue
+        if (-not $snupkg) { throw "No $id.$version.snupkg in $dir; the package would ship without symbols." }
+
+        $work = Join-Path ([IO.Path]::GetTempPath()) "verify-$([Guid]::NewGuid())"
+        Expand-Archive $nupkg.FullName -DestinationPath (Join-Path $work 'pkg') -Force
+        Expand-Archive $snupkg.FullName -DestinationPath (Join-Path $work 'sym') -Force
+
+        $nuspec = [xml](Get-Content (Join-Path $work "pkg/$id.nuspec"))
+        if ($nuspec.package.metadata.version -ne $version) {
+          throw "Nuspec says version $($nuspec.package.metadata.version) but $version was requested."
+        }
+
+        # A prerelease suffix never reaches the assembly version, so compare the numeric core only.
+        $expected = [Version]("$($version -replace '-.*$', '')" + '.0')
+
+        $assemblies = Get-ChildItem (Join-Path $work 'pkg/lib') -Recurse -Filter *.dll
+        if (-not $assemblies) { throw 'The package contains no assemblies under lib/.' }
+
+        $failures = @()
+        foreach ($assembly in $assemblies) {
+          $actual = [System.Reflection.AssemblyName]::GetAssemblyName($assembly.FullName).Version
+          $tfm = Split-Path $assembly.Directory -Leaf
+          $symbol = Join-Path $work "sym/lib/$tfm/$($assembly.BaseName).pdb"
+
+          if ($actual -ne $expected) {
+            $failures += "$($assembly.Name) is stamped $actual, expected $expected"
+          }
+          if (-not (Test-Path $symbol)) {
+            $failures += "$($assembly.Name) has no matching PDB in the symbol package"
+          }
+
+          Write-Host "  lib/$tfm/$($assembly.Name)  version=$actual  symbols=$(Test-Path $symbol)"
+        }
+
+        if ($failures) {
+          $failures | ForEach-Object { Write-Host "::error::$_" }
+          throw "$($failures.Count) package check(s) failed."
+        }
+
+        Write-Host "Verified $($assemblies.Count) assemblies at $expected, all with symbols."
+        "package-path=$($nupkg.FullName)" >> $env:GITHUB_OUTPUT

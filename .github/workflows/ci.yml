@@ -2,24 +2,34 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: ['**']
   pull_request:
-    branches: [ main ]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  LIBRARY_PROJECT: Ico.Reader/Ico.Reader.csproj
+  TEST_PROJECT: Ico.Reader.Test/Ico.Reader.Test.csproj
+  ARTIFACTS_PATH: artifacts
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           # 8.0.x supplies the runtime the test project targets; global.json picks the build SDK.
           dotnet-version: |
@@ -27,19 +37,75 @@ jobs:
             10.0.x
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Restore
-        run: dotnet restore Ico.Reader.Test/Ico.Reader.Test.csproj
+        run: dotnet restore ${{ env.TEST_PROJECT }} -clp:ForceConsoleColor
 
       - name: Build
-        run: dotnet build Ico.Reader.Test/Ico.Reader.Test.csproj -c Release --no-restore
+        run: dotnet build ${{ env.TEST_PROJECT }} -c Release --no-restore -clp:ForceConsoleColor
 
       - name: Test
-        run: dotnet test Ico.Reader.Test/Ico.Reader.Test.csproj -c Release --no-build
-          --logger "trx;LogFileName=test-results.trx" --results-directory ./artifacts/test
+        run: >
+          dotnet test ${{ env.TEST_PROJECT }} -c Release --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory ./${{ env.ARTIFACTS_PATH }}/test
+          -clp:ForceConsoleColor
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
-          path: ./artifacts/test
+          path: ./${{ env.ARTIFACTS_PATH }}/test
+          if-no-files-found: error
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Packing on every push exercises the release path, so a packaging break is caught here
+      # rather than during a release.
+      - name: Pack
+        run: >
+          dotnet pack ${{ env.LIBRARY_PROJECT }} -c Release
+          -o ./${{ env.ARTIFACTS_PATH }}
+          -p:Version=0.0.0-ci.${{ github.run_number }}
+          -clp:ForceConsoleColor
+
+      - name: Verify package
+        uses: ./.github/actions/verify-package
+        with:
+          artifacts-dir: ${{ env.ARTIFACTS_PATH }}
+          package-id: Ico.Reader
+          version: 0.0.0-ci.${{ github.run_number }}
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nupkg
+          path: |
+            ./${{ env.ARTIFACTS_PATH }}/*.nupkg
+            ./${{ env.ARTIFACTS_PATH }}/*.snupkg
+          if-no-files-found: error
