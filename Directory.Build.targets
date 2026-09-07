@@ -6,33 +6,24 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeReferencedProjectsInPackage</TargetsForTfmSpecificBuildOutput>
-    <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);IncludeReferencedProjectSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);BundleReferencedProjects</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);BundleReferencedProjects</TargetsForTfmSpecificDebugSymbolsInPackage>
   </PropertyGroup>
 
-  <Target Name="_CollectBundledProjectOutput" DependsOnTargets="ResolveReferences">
+  <Target Name="BundleReferencedProjects" DependsOnTargets="ResolveReferences">
     <ItemGroup>
       <_BundledAssembly Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference' And '%(Extension)' == '.dll'" />
-      <_BundledSymbol Include="@(_BundledAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
+
+      <BuildOutputInPackage Include="@(_BundledAssembly)" />
+
+      <TfmSpecificDebugSymbolsFile Include="@(_BundledAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')">
+        <TargetPath>/lib/$(TargetFramework)/%(Filename).pdb</TargetPath>
+        <TargetFramework>$(TargetFramework)</TargetFramework>
+      </TfmSpecificDebugSymbolsFile>
     </ItemGroup>
 
     <Error Condition="'@(ProjectReference)' != '' And '@(_BundledAssembly)' == ''"
       Text="$(MSBuildProjectName) references projects that should be packed into it, but none of their assemblies were found. The package would ship without them and fail at run time." />
-  </Target>
-
-  <Target Name="IncludeReferencedProjectsInPackage" DependsOnTargets="_CollectBundledProjectOutput">
-    <ItemGroup>
-      <BuildOutputInPackage Include="@(_BundledAssembly)" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="IncludeReferencedProjectSymbolsInPackage" DependsOnTargets="_CollectBundledProjectOutput">
-    <ItemGroup>
-      <TfmSpecificDebugSymbolsFile Include="@(_BundledSymbol)" Condition="Exists('%(Identity)')">
-        <TargetPath>/lib/$(TargetFramework)/%(Filename)%(Extension)</TargetPath>
-        <TargetFramework>$(TargetFramework)</TargetFramework>
-      </TfmSpecificDebugSymbolsFile>
-    </ItemGroup>
   </Target>
 
 </Project>
