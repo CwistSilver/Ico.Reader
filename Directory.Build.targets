@@ -1,6 +1,6 @@
 <Project>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' And '$(UsePolyfills)' != 'false'">
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp' And '$(UsePolyfills)' != 'false'">
     <PackageReference Include="PolySharp" PrivateAssets="all" />
     <PackageReference Include="System.Memory" />
   </ItemGroup>

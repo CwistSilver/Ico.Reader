@@ -36,7 +36,8 @@
   <Target Name="CopyPeFixture" AfterTargets="Build">
     <MSBuild Projects="..\Ico.Reader.Test.PeFixture\Ico.Reader.Test.PeFixture.csproj"
              Targets="GetTargetPath"
-             Properties="Configuration=$(Configuration)">
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFramework">
       <Output TaskParameter="TargetOutputs" ItemName="PeFixtureAssembly" />
     </MSBuild>
     <Copy SourceFiles="@(PeFixtureAssembly)" DestinationFolder="$(OutputPath)Resources\Pe\" SkipUnchangedFiles="true" />

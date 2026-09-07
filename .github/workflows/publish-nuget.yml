@@ -8,6 +8,10 @@ permissions:
   contents: write
   id-token: write
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -24,23 +28,27 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
+          # 8.0.x supplies the runtime the test project targets; global.json picks the build SDK.
+          dotnet-version: |
+            8.0.x
+            10.0.x
           global-json-file: global.json
 
-      - name: Restore
-        run: dotnet restore Ico.Reader/Ico.Reader.csproj
+      - name: Test
+        run: dotnet test Ico.Reader.Test/Ico.Reader.Test.csproj -c Release
 
-      - name: Build
-        run: dotnet build Ico.Reader/Ico.Reader.csproj -c Release --no-restore
-
+      # pack builds rather than reusing a --no-build output, so -p:Version reaches the compiler
+      # and every assembly in the package is stamped with it.
       - name: Pack
-        run: dotnet pack Ico.Reader/Ico.Reader.csproj -c
-          Release --no-build -o ./artifacts -p:Version=${{
-          steps.version.outputs.value }}
+        run: dotnet pack Ico.Reader/Ico.Reader.csproj -c Release -o ./artifacts
+          -p:Version=${{ steps.version.outputs.value }}
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v3
         with:
-          files: ./artifacts/*.nupkg
+          files: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
 
       - name: NuGet login
         uses: NuGet/login@v1
@@ -48,6 +56,8 @@ jobs:
         with:
           user: Der-Floh
 
+      # This pushes the matching .snupkg alongside the .nupkg; a separate push for it would only
+      # ever fail as a duplicate.
       - name: Publish to NuGet.org
         run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{
           steps.login.outputs.NUGET_API_KEY }}" --source
