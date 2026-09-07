@@ -1,5 +1,8 @@
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
 
+/// <summary>
+/// Decodes 4 bit per pixel indexed BMP icon data, where each nibble selects a palette entry.
+/// </summary>
 public sealed class IcoBmp4Decoder : IndexedBmpDecoder
 {
     /// <inheritdoc/>

@@ -6,6 +6,10 @@ using Ico.Reader.Reading;
 
 namespace Ico.Reader.Data;
 
+/// <summary>
+/// The result of reading an ico source: the groups and image references it contains, plus the
+/// means to fetch each image as PNG data on demand.
+/// </summary>
 public sealed class IcoData
 {
     /// <summary>
@@ -71,6 +75,7 @@ public sealed class IcoData
     /// </summary>
     /// <param name="imageReference">The image reference that contains metadata for the image.</param>
     /// <returns>A byte array containing the image data.</returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public byte[] GetImage(ImageReference imageReference)
     {
         using var stream = _dataSource.GetStream();
@@ -84,6 +89,7 @@ public sealed class IcoData
     /// <param name="entryIndex">The index of the entry within the group to retrieve.</param>
     /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
     /// <returns>A byte array containing the image data.</returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public byte[] GetImage(string groupName, int entryIndex, IcoType icoType)
     {
         var imageReference = GetImageReference(groupName, entryIndex, icoType);
@@ -96,6 +102,7 @@ public sealed class IcoData
     /// <param name="group">The ICO group that contains the image entry.</param>
     /// <param name="entryIndex">The index of the entry within the group.</param>
     /// <returns>A byte array containing the image data.</returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public byte[] GetImage(IIcoGroup group, int entryIndex)
     {
         var imageReference = GetImageReference(group, entryIndex);
@@ -107,6 +114,7 @@ public sealed class IcoData
     /// </summary>
     /// <param name="imageReferenceIndex">The index of the image to retrieve.</param>
     /// <returns>A byte array containing the image data.</returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public byte[] GetImage(int imageReferenceIndex) => GetImage(ImageReferences[imageReferenceIndex]);
 
     #endregion
@@ -120,6 +128,7 @@ public sealed class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public Task<byte[]> GetImageAsync(int imageReferenceIndex, CancellationToken cancellationToken = default)
         => GetImageAsync(ImageReferences[imageReferenceIndex], cancellationToken);
 
@@ -133,6 +142,7 @@ public sealed class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public Task<byte[]> GetImageAsync(string groupName, int entryIndex, IcoType icoType, CancellationToken cancellationToken = default)
         => GetImageAsync(GetImageReference(groupName, entryIndex, icoType), cancellationToken);
 
@@ -145,6 +155,7 @@ public sealed class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public Task<byte[]> GetImageAsync(IIcoGroup group, int entryIndex, CancellationToken cancellationToken = default)
         => GetImageAsync(GetImageReference(group, entryIndex), cancellationToken);
 
@@ -156,6 +167,7 @@ public sealed class IcoData
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
+    /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
     public async Task<byte[]> GetImageAsync(ImageReference imageReference, CancellationToken cancellationToken = default)
     {
         using var stream = _dataSource.GetStream(useAsync: true);
@@ -310,6 +322,7 @@ public sealed class IcoData
     public CursorGroup GetCursorGroup(string groupName)
         => CursorGroups.FirstOrDefault(x => x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
 
+    /// <inheritdoc/>
     public override string ToString() => $"{Name} Groups[{Groups.Count}] Images[{ImageReferences.Count}] ({OriginFileType})";
 
 }

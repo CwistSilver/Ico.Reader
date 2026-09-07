@@ -2,6 +2,10 @@ using Ico.Reader.Decoder;
 
 namespace Ico.Reader.Data;
 
+/// <summary>
+/// The decoders an <see cref="IcoReader"/> uses. Both default to the decoders the library ships
+/// with, so only the one being replaced has to be set.
+/// </summary>
 public sealed class IcoReaderConfiguration
 {
     /// <summary>

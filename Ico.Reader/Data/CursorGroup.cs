@@ -30,5 +30,6 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
 
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
 
+    /// <inheritdoc/>
     public override string ToString() => $"[{nameof(CursorGroup)}] {Name} ({Size})";
 }

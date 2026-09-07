@@ -132,6 +132,6 @@ public sealed class MalformedInputTests
         var result = _reader.Read(truncated);
 
         Assert.NotNull(result);
-        await Assert.ThrowsAsync<EndOfStreamException>(() => result.GetImageAsync(0));
+        await Assert.ThrowsAsync<EndOfStreamException>(() => result.GetImageAsync(0, TestContext.Current.CancellationToken));
     }
 }

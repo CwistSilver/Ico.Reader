@@ -30,5 +30,6 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
 
     IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
 
+    /// <inheritdoc/>
     public override string ToString() => $"[{nameof(IconGroup)}] {Name} ({Size})";
 }

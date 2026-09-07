@@ -7,6 +7,9 @@
 /// </summary>
 public sealed record CursorDirectoryEntry : IIcoDirectoryEntry
 {
+    /// <summary>
+    /// The value an ico header carries in its image type field for cursors.
+    /// </summary>
     public const int ImageType = 2;
 
     /// <summary>

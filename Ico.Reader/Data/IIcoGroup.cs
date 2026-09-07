@@ -1,5 +1,9 @@
 ﻿namespace Ico.Reader.Data;
 
+/// <summary>
+/// A group of ico images whose entries are exposed without their concrete type, so icon and cursor
+/// groups can be handled together.
+/// </summary>
 public interface IIcoGroup : IIcoGroup<IIcoDirectoryEntry> { }
 
 /// <summary>

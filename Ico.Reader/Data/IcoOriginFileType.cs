@@ -1,5 +1,8 @@
 ﻿namespace Ico.Reader.Data;
 
+/// <summary>
+/// The kind of file the ico data was read from.
+/// </summary>
 public enum IcoOriginFileType
 {
     /// <summary>

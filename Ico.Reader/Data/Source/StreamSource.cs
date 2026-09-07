@@ -1,8 +1,19 @@
 ﻿namespace Ico.Reader.Data.Source;
 
+/// <summary>
+/// An <see cref="IDataSource"/> that reads the caller's stream directly, without copying it. The
+/// stream must stay open for as long as images are read from it.
+/// </summary>
 public sealed class StreamSource : IDataSource
 {
     private readonly Stream _sourceStream;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StreamSource"/> class.
+    /// </summary>
+    /// <param name="sourceStream">The stream to read from. Ownership stays with the caller.</param>
+    /// <exception cref="ArgumentNullException">The stream is null.</exception>
+    /// <exception cref="ArgumentException">The stream is not readable or not seekable.</exception>
     public StreamSource(Stream sourceStream)
     {
         if (sourceStream is null)

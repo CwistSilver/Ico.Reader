@@ -6,6 +6,10 @@ using Ico.Reader.Extensions;
 
 namespace Ico.Reader.Creator;
 
+/// <summary>
+/// The default <see cref="IPngCreator"/>, writing an uncompressed-filter PNG with the deflate
+/// support in <see cref="System.IO.Compression"/>.
+/// </summary>
 public sealed class PngCreator : IPngCreator
 {
     private const uint cInit = 0xffffffff;
@@ -23,6 +27,7 @@ public sealed class PngCreator : IPngCreator
         return c;
     })];
 
+    /// <inheritdoc/>
     public byte[] CreatePng(ReadOnlySpan<byte> rgba, BmpInfoHeader header)
     {
         var width = header.Width;
@@ -99,6 +104,11 @@ public sealed class PngCreator : IPngCreator
         writer.WriteUInt32BigEndian(crc);
     }
 
+    /// <summary>
+    /// Computes the CRC-32 that terminates every PNG chunk.
+    /// </summary>
+    /// <param name="data">The chunk type followed by its payload.</param>
+    /// <returns>The checksum to write after the payload.</returns>
     public static uint CalculateCrc32(byte[] data)
     {
         var crc = cInit;

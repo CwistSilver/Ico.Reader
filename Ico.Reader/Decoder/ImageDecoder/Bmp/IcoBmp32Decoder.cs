@@ -2,10 +2,15 @@
 
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
 
+/// <summary>
+/// Decodes 32 bit per pixel BMP icon data, using the alpha channel in the pixels themselves.
+/// </summary>
 public sealed class IcoBmp32Decoder : IIcoBmpDecoder
 {
+    /// <inheritdoc/>
     public byte BitCountSupported => 32;
 
+    /// <inheritdoc/>
     public byte[] DecodeIcoBmpToRgba(ReadOnlySpan<byte> data, BmpInfoHeader header)
     {
         var width = header.Width;

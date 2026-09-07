@@ -8,6 +8,9 @@
 /// </summary>
 public sealed record IconDirectoryEntry : IIcoDirectoryEntry
 {
+    /// <summary>
+    /// The value an ico header carries in its image type field for icons.
+    /// </summary>
     public const int ImageType = 1;
 
     /// <summary>

@@ -2,6 +2,10 @@ using Ico.Reader.Data;
 
 namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
 
+/// <summary>
+/// Decodes 24 bit per pixel BMP icon data, taking transparency from the AND mask because the
+/// pixels themselves carry no alpha channel.
+/// </summary>
 public sealed class IcoBmp24Decoder : IIcoBmpDecoder
 {
     private const int BytesPerPixel = 3;
