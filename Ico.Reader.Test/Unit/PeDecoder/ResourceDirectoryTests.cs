@@ -1,4 +1,4 @@
-using PeDecoder.Models;
+using Ico.Reader.PeDecoder.Models;
 
 namespace Ico.Reader.Test.Unit.PeDecoder;
 

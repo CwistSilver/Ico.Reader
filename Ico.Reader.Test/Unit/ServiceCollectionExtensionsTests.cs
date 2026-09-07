@@ -5,7 +5,7 @@ using Ico.Reader.Decoder.ImageDecoder.Bmp;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using PeDecoder;
+using Ico.Reader.PeDecoder;
 
 namespace Ico.Reader.Test.Unit;
 

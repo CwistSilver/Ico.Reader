@@ -3,8 +3,8 @@
 using Ico.Reader.Data;
 using Ico.Reader.Reading;
 
-using PeDecoder;
-using PeDecoder.Models;
+using Ico.Reader.PeDecoder;
+using Ico.Reader.PeDecoder.Models;
 
 namespace Ico.Reader.Decoder;
 

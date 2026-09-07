@@ -3,10 +3,9 @@ using Ico.Reader.Data;
 using Ico.Reader.Decoder;
 using Ico.Reader.Decoder.ImageDecoder;
 using Ico.Reader.Decoder.ImageDecoder.Bmp;
+using Ico.Reader.PeDecoder;
 
 using Microsoft.Extensions.DependencyInjection;
-
-using PeDecoder;
 
 namespace Ico.Reader;
 
@@ -40,7 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDecoder>(p => new BmpDecoder(p.GetServices<IIcoBmpDecoder>(), p.GetRequiredService<IPngCreator>()));
         services.AddSingleton<IDecoder, PngDecoder>();
 
-        services.AddSingleton<IPeDecoder, PeDecoder.PeDecoder>();
+        services.AddSingleton<IPeDecoder, PeFileDecoder>();
         services.AddSingleton<IIcoDecoder, IcoDecoder>();
         services.AddSingleton<IIcoPeDecoder, IcoPeDecoder>();
         services.AddSingleton<Export.IIcoExporter, Export.IcoExporter>();

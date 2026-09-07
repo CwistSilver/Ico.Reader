@@ -1,7 +1,7 @@
 <Solution>
-  <Project Path="CommonShims/CommonShims.csproj" />
+  <Project Path="Ico.Reader.CommonShims/Ico.Reader.CommonShims.csproj" />
   <Project Path="Ico.Reader/Ico.Reader.csproj" />
   <Project Path="Ico.Reader.Test/Ico.Reader.Test.csproj" />
   <Project Path="Ico.Reader.Test.PeFixture/Ico.Reader.Test.PeFixture.csproj" />
-  <Project Path="PeDecoder/PeDecoder.csproj" />
+  <Project Path="Ico.Reader.PeDecoder/Ico.Reader.PeDecoder.csproj" />
 </Solution>

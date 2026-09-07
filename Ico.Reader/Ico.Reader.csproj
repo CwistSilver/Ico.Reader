@@ -31,8 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CommonShims\CommonShims.csproj" PrivateAssets="All" />
-    <ProjectReference Include="..\PeDecoder\PeDecoder.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Ico.Reader.CommonShims\Ico.Reader.CommonShims.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Ico.Reader.PeDecoder\Ico.Reader.PeDecoder.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <!-- Readers and parsers are implementation details, so the tests reach them as internals. -->
@@ -48,8 +48,8 @@
   -->
   <Target Name="IncludeReferencedProjectDlls">
     <ItemGroup>
-      <BuildOutputInPackage Include="$(OutputPath)CommonShims.dll" Condition="Exists('$(OutputPath)CommonShims.dll')" />
-      <BuildOutputInPackage Include="$(OutputPath)PeDecoder.dll" Condition="Exists('$(OutputPath)PeDecoder.dll')" />
+      <BuildOutputInPackage Include="$(OutputPath)Ico.Reader.CommonShims.dll" Condition="Exists('$(OutputPath)Ico.Reader.CommonShims.dll')" />
+      <BuildOutputInPackage Include="$(OutputPath)Ico.Reader.PeDecoder.dll" Condition="Exists('$(OutputPath)Ico.Reader.PeDecoder.dll')" />
     </ItemGroup>
   </Target>
 

@@ -1,5 +1,6 @@
-﻿using PeDecoder.Models;
-using PeDecoder.Reading;
+﻿using Ico.Reader.PeDecoder;
+using Ico.Reader.PeDecoder.Models;
+using Ico.Reader.PeDecoder.Reading;
 
 namespace Ico.Reader.Test.Integration;
 
@@ -22,7 +23,7 @@ public sealed class PeGroupResolutionTests
     private static int GroupIconDirectoryOffset(byte[] pe, string groupName)
     {
         using var stream = new MemoryStream(pe);
-        var peHeader = new global::PeDecoder.PeDecoder().DecodePE(stream);
+        var peHeader = new PeFileDecoder().DecodePE(stream);
         var root = ResourceReader.Read(stream, peHeader)!;
 
         var groupDirectory = root.GetDirectory(ResourceType.RT_GROUP_ICON.ToString())!;

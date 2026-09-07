@@ -2,6 +2,7 @@ using Ico.Reader.Creator;
 using Ico.Reader.Decoder;
 using Ico.Reader.Decoder.ImageDecoder;
 using Ico.Reader.Decoder.ImageDecoder.Bmp;
+using Ico.Reader.PeDecoder;
 
 namespace Ico.Reader;
 
@@ -30,5 +31,5 @@ internal static class IcoReaderDefaults
 
     public static IIcoDecoder CreateIcoDecoder() => new IcoDecoder(CreateImageDecoders());
 
-    public static IIcoPeDecoder CreateIcoPeDecoder() => new IcoPeDecoder(new PeDecoder.PeDecoder());
+    public static IIcoPeDecoder CreateIcoPeDecoder() => new IcoPeDecoder(new PeFileDecoder());
 }

@@ -18,10 +18,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Ico.Reader\Ico.Reader.csproj" />
     <!-- Ico.Reader hides PeDecoder from consumers; the tests assert on its DI registration. -->
-    <ProjectReference Include="..\PeDecoder\PeDecoder.csproj" />
+    <ProjectReference Include="..\Ico.Reader.PeDecoder\Ico.Reader.PeDecoder.csproj" />
     <!-- Ico.Reader routes its span-based reads through CommonShims, so the shims are covered
          directly as well as through the rest of the suite. -->
-    <ProjectReference Include="..\CommonShims\CommonShims.csproj" />
+    <ProjectReference Include="..\Ico.Reader.CommonShims\Ico.Reader.CommonShims.csproj" />
     <ProjectReference Include="..\Ico.Reader.Test.PeFixture\Ico.Reader.Test.PeFixture.csproj"
                       ReferenceOutputAssembly="false"
                       Private="false" />
