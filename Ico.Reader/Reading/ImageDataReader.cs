@@ -12,7 +12,7 @@ internal static class ImageDataReader
     {
         var data = new byte[(int)imageReference.Size];
         stream.Position = imageReference.Offset;
-        stream.Read(data, 0, data.Length);
+        stream.ReadExactly(data, 0, data.Length);
 
         return icoDecoder.GetImageData(data, imageReference.Format);
     }
@@ -21,7 +21,7 @@ internal static class ImageDataReader
     {
         var data = new byte[(int)imageReference.Size];
         stream.Position = imageReference.Offset;
-        await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+        await stream.ReadExactlyAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
 
         return icoDecoder.GetImageData(data, imageReference.Format);
     }

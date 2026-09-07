@@ -13,8 +13,10 @@ internal static class MzHeaderReader
     {
         stream.Position = 0;
 
+        // Runs on every input to decide whether it is a PE at all, so anything shorter than a DOS
+        // header is simply not one. The zeroed remainder leaves HasMzSignature false.
         Span<byte> data = stackalloc byte[MzHeader.HeaderSize];
-        stream.Read(data);
+        _ = stream.Read(data);
 
         ReadOnlySpan<byte> readOnlyData = data;
 

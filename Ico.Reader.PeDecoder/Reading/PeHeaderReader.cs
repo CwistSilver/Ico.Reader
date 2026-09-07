@@ -18,7 +18,7 @@ internal static class PeHeaderReader
         stream.Position = headerOffset;
 
         Span<byte> buffer = stackalloc byte[(int)PeHeader.PeHeaderSize];
-        stream.Read(buffer);
+        stream.ReadExactly(buffer);
 
         ReadOnlySpan<byte> data = buffer;
         var sizeOfOptionalHeader = MemoryMarshal.Read<ushort>(data.Slice(20, 2));
@@ -46,7 +46,7 @@ internal static class PeHeaderReader
         stream.Position = PeSignatureOffsetPosition;
 
         Span<byte> peHeaderOffset = stackalloc byte[4];
-        stream.Read(peHeaderOffset);
+        stream.ReadExactly(peHeaderOffset);
 
         return MemoryMarshal.Read<uint>(peHeaderOffset);
     }

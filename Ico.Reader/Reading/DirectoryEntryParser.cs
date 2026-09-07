@@ -149,7 +149,7 @@ internal static class DirectoryEntryParser
         var buffer = ArrayPool<byte>.Shared.Rent(byteSize);
         try
         {
-            stream.Read(buffer, 0, byteSize);
+            stream.ReadExactly(buffer, 0, byteSize);
 
             for (var i = 0; i < entryCount; i++)
                 entries[i] = parseEntry(new ReadOnlySpan<byte>(buffer, i * entrySize, entrySize));

@@ -145,16 +145,17 @@ public sealed class IcoReader
     /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
     private IcoData? ReadFromStream(Stream stream, IDataSource dataSource)
     {
-        IcoData? IcoData;
-        if (_icoReaderConfiguration.IcoExeDecoder.IsPeFormat(stream))
-            IcoData = ReadFromExe(stream, dataSource);
-        else
-            IcoData = ReadFromIco(stream, dataSource);
-
-        if (IcoData is null)
+        try
+        {
+            return _icoReaderConfiguration.IcoExeDecoder.IsPeFormat(stream)
+                ? ReadFromExe(stream, dataSource)
+                : ReadFromIco(stream, dataSource);
+        }
+        catch (EndOfStreamException)
+        {
+            // Truncated input is a parse failure, and every Read overload reports those as null.
             return null;
-
-        return IcoData;
+        }
     }
 
     /// <summary>

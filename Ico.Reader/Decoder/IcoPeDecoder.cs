@@ -124,7 +124,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             var fileOffset = curDataEntry.GetFileOffset(resourceSection);
 
             stream.Position = fileOffset;
-            stream.Read(hotspotData);
+            stream.ReadExactly(hotspotData);
 
             var hotspotX = MemoryMarshal.Read<ushort>(hotspotData.Slice(0, 2));
             var hotspotY = MemoryMarshal.Read<ushort>(hotspotData.Slice(2, 2));

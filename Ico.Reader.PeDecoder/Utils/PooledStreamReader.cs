@@ -23,7 +23,7 @@ internal static class PooledStreamReader
         var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
-            stream.Read(buffer, 0, byteCount);
+            stream.ReadExactly(buffer, 0, byteCount);
             return parse(new ReadOnlySpan<byte>(buffer, 0, byteCount));
         }
         finally

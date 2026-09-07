@@ -62,7 +62,7 @@ internal static class ResourceReader
     private static ResourceDirectory ReadResourceDirectoryBase(Stream stream, long virtualAddress, int level)
     {
         Span<byte> resourceDirectoryBytes = stackalloc byte[16];
-        stream.Read(resourceDirectoryBytes);
+        stream.ReadExactly(resourceDirectoryBytes);
 
         ReadOnlySpan<byte> resourceDirectorySpan = resourceDirectoryBytes;
 
@@ -105,7 +105,7 @@ internal static class ResourceReader
         resourceStream.Position = streamOffset + entry.NameOffset;
 
         Span<byte> lengthBytes = stackalloc byte[2];
-        resourceStream.Read(lengthBytes);
+        resourceStream.ReadExactly(lengthBytes);
         var nameLength = MemoryMarshal.Read<ushort>(lengthBytes);
 
         // A name is UTF-16 and its length is a ushort, so this can ask for 128 KB of stack.
@@ -159,7 +159,7 @@ internal static class ResourceReader
         stream.Position = baseOffset + dataEntryOffset;
 
         Span<byte> data = stackalloc byte[16];
-        stream.Read(data);
+        stream.ReadExactly(data);
 
         ReadOnlySpan<byte> readOnlyData = data;
 

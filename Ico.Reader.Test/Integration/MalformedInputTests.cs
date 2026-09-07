@@ -110,4 +110,28 @@ public sealed class MalformedInputTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void GetImage_ThrowsWhenTheImageDataIsTruncated()
+    {
+        var ico = ValidIcon();
+        var truncated = ico.AsSpan(0, ico.Length - 32).ToArray();
+
+        var result = _reader.Read(truncated);
+
+        Assert.NotNull(result);
+        Assert.Throws<EndOfStreamException>(() => result.GetImage(0));
+    }
+
+    [Fact]
+    public async Task GetImageAsync_ThrowsWhenTheImageDataIsTruncated()
+    {
+        var ico = ValidIcon();
+        var truncated = ico.AsSpan(0, ico.Length - 32).ToArray();
+
+        var result = _reader.Read(truncated);
+
+        Assert.NotNull(result);
+        await Assert.ThrowsAsync<EndOfStreamException>(() => result.GetImageAsync(0));
+    }
 }

@@ -60,8 +60,10 @@ internal static class ImageReferenceReader
     {
         stream.Position = offset;
 
+        // A fixed probe window rather than a record: an image smaller than the window is legal, so
+        // a short read is expected and leaves the remainder zeroed for the decoder to reject.
         Span<byte> buffer = stackalloc byte[MetadataProbeSize];
-        stream.Read(buffer);
+        _ = stream.Read(buffer);
 
         ReadOnlySpan<byte> imageHeader = buffer;
 

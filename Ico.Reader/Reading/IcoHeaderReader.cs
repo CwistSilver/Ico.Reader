@@ -24,7 +24,7 @@ internal static class IcoHeaderReader
         stream.Position = startPosition;
 
         Span<byte> buffer = stackalloc byte[HeaderSize];
-        stream.Read(buffer);
+        stream.ReadExactly(buffer);
 
         ReadOnlySpan<byte> header = buffer;
 
