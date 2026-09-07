@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeReferencedProjectDlls</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
@@ -41,16 +40,5 @@
       <_Parameter1>Ico.Reader.Test</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-
-  <!--
-    The referenced projects are packed into this package rather than published as their own, so
-    their assemblies have to be added to the build output by hand.
-  -->
-  <Target Name="IncludeReferencedProjectDlls">
-    <ItemGroup>
-      <BuildOutputInPackage Include="$(OutputPath)Ico.Reader.CommonShims.dll" Condition="Exists('$(OutputPath)Ico.Reader.CommonShims.dll')" />
-      <BuildOutputInPackage Include="$(OutputPath)Ico.Reader.PeDecoder.dll" Condition="Exists('$(OutputPath)Ico.Reader.PeDecoder.dll')" />
-    </ItemGroup>
-  </Target>
 
 </Project>
