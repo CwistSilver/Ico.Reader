@@ -1,6 +1,5 @@
 <Project>
 
-  <!-- "latest" is only reproducible because global.json pins the SDK that resolves it. -->
   <PropertyGroup Label="Language">
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -8,8 +7,6 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
-  <!-- The SDK only turns these on for .NETCoreApp 5.0 and later, so a netstandard-only
-       repository gets no code analysis unless it asks for it. -->
   <PropertyGroup Label="Analysis">
     <AnalysisLevel>latest</AnalysisLevel>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
@@ -21,7 +18,6 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <!-- Release ships a symbol package, which cannot carry embedded symbols. -->
   <PropertyGroup Label="Symbols">
     <DebugType Condition="'$(Configuration)' == 'Release'">portable</DebugType>
     <DebugType Condition="'$(Configuration)' != 'Release'">embedded</DebugType>

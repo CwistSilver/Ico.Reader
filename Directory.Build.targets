@@ -5,13 +5,6 @@
     <PackageReference Include="System.Memory" />
   </ItemGroup>
 
-  <!--
-    NuGet's pack target cannot put ProjectReference output into a package; it only ever emits
-    package dependencies (NuGet/Home#3891). Referencing a project with PrivateAssets="All"
-    suppresses the dependency, and these targets add the assemblies to lib/ and their symbols to
-    the .snupkg. Every project reference here is a non-packable implementation project, so all of
-    them are bundled.
-  -->
   <PropertyGroup>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeReferencedProjectsInPackage</TargetsForTfmSpecificBuildOutput>
     <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);IncludeReferencedProjectSymbolsInPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
@@ -19,14 +12,12 @@
 
   <Target Name="_CollectBundledProjectOutput" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <_BundledAssembly Include="@(ReferenceCopyLocalPaths)"
-                        Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference' And '%(Extension)' == '.dll'" />
-      <!-- ReferenceCopyLocalPaths carries only the assembly, so the symbols are found beside it. -->
+      <_BundledAssembly Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference' And '%(Extension)' == '.dll'" />
       <_BundledSymbol Include="@(_BundledAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
     </ItemGroup>
 
     <Error Condition="'@(ProjectReference)' != '' And '@(_BundledAssembly)' == ''"
-           Text="$(MSBuildProjectName) references projects that should be packed into it, but none of their assemblies were found. The package would ship without them and fail at run time." />
+      Text="$(MSBuildProjectName) references projects that should be packed into it, but none of their assemblies were found. The package would ship without them and fail at run time." />
   </Target>
 
   <Target Name="IncludeReferencedProjectsInPackage" DependsOnTargets="_CollectBundledProjectOutput">
