@@ -15,6 +15,7 @@
       <_BundledAssembly Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference' And '%(Extension)' == '.dll'" />
 
       <BuildOutputInPackage Include="@(_BundledAssembly)" />
+      <BuildOutputInPackage Include="@(_BundledAssembly->'%(RootDir)%(Directory)%(Filename).xml')" Condition="Exists('%(RootDir)%(Directory)%(Filename).xml')" />
 
       <TfmSpecificDebugSymbolsFile Include="@(_BundledAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')">
         <TargetPath>/lib/$(TargetFramework)/%(Filename).pdb</TargetPath>
