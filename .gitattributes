@@ -45,6 +45,15 @@
 #*.gif   binary
 
 ###############################################################################
+# scripts
+#
+# The shell must see LF and the command prompt CRLF, whatever the platform.
+###############################################################################
+*.sh     text eol=lf
+*.cmd    text eol=crlf
+*.bat    text eol=crlf
+
+###############################################################################
 # test fixtures
 #
 # Byte-exact fixtures; any line ending conversion would corrupt them.
