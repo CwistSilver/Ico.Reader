@@ -1,7 +1,10 @@
 ﻿namespace Ico.Reader.PeDecoder.Models;
 
+/// <summary>
+/// Attributes of a section, describing what it contains and how the loader should treat it.
+/// </summary>
 [Flags]
-internal enum SectionFlag : uint
+public enum SectionFlag : uint
 {
     /// <summary>
     /// Reserved for future use.
