@@ -6,14 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup Label="Library">
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
     <PackageVersion Include="PolySharp" Version="1.16.0" />
     <PackageVersion Include="System.Memory" Version="4.6.3" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">
     <PackageVersion Include="coverlet.collector" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="2.1.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
