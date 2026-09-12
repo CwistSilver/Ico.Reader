@@ -87,10 +87,10 @@ public sealed class IcoData
     /// </summary>
     /// <param name="groupName">The name of the ICO group.</param>
     /// <param name="entryIndex">The index of the entry within the group to retrieve.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <returns>A byte array containing the image data.</returns>
     /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
-    public byte[] GetImage(string groupName, int entryIndex, IcoType icoType)
+    public byte[] GetImage(string groupName, int entryIndex, IcoType icoType = IcoType.Icon)
     {
         var imageReference = GetImageReference(groupName, entryIndex, icoType);
         return GetImage(imageReference);
@@ -137,13 +137,13 @@ public sealed class IcoData
     /// </summary>
     /// <param name="groupName">The name of the ICO group.</param>
     /// <param name="entryIndex">The index of the entry within the group to retrieve.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <param name="cancellationToken">A token that cancels the read.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The result contains a byte array with the image data.
     /// </returns>
     /// <exception cref="EndOfStreamException">The image data is truncated.</exception>
-    public Task<byte[]> GetImageAsync(string groupName, int entryIndex, IcoType icoType, CancellationToken cancellationToken = default)
+    public Task<byte[]> GetImageAsync(string groupName, int entryIndex, IcoType icoType = IcoType.Icon, CancellationToken cancellationToken = default)
         => GetImageAsync(GetImageReference(groupName, entryIndex, icoType), cancellationToken);
 
     /// <summary>
@@ -225,10 +225,10 @@ public sealed class IcoData
     /// </summary>
     /// <param name="groupName">The name of the ICO group.</param>
     /// <param name="imageIndex">The index of the image within the group.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the group type.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the group type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <returns>The <see cref="ImageReference"/> associated with the specified group and index.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
-    public ImageReference GetImageReference(string groupName, int imageIndex, IcoType icoType)
+    public ImageReference GetImageReference(string groupName, int imageIndex, IcoType icoType = IcoType.Icon)
     {
         var group = GetGroup(groupName, icoType);
         return GetImageReference(group, imageIndex);
@@ -260,12 +260,12 @@ public sealed class IcoData
     /// Retrieves the image references for a specified ICO group.
     /// </summary>
     /// <param name="groupName">The name of the ICO group.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the group type.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the group type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <returns>
     /// A read-only collection of <see cref="ImageReference"/> objects associated with the specified group.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown if the specified ICO group is not found.</exception>
-    public ReadOnlyCollection<ImageReference> GetImageReferences(string groupName, IcoType icoType)
+    public ReadOnlyCollection<ImageReference> GetImageReferences(string groupName, IcoType icoType = IcoType.Icon)
     {
         var group = GetGroup(groupName, icoType);
         return GetImageReferences(group);
@@ -298,10 +298,10 @@ public sealed class IcoData
     /// Retrieves the ICO group with the specified name.
     /// </summary>
     /// <param name="groupName"> The name of the ICO group.</param>
-    /// <param name="icoType"> The <see cref="IcoType"/> to specify the group type.</param>
+    /// <param name="icoType"> The <see cref="IcoType"/> to specify the group type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public IIcoGroup GetGroup(string groupName, IcoType icoType)
+    public IIcoGroup GetGroup(string groupName, IcoType icoType = IcoType.Icon)
         => Groups.FirstOrDefault(x => x.IcoType == icoType && x.Name == groupName) ?? throw new InvalidOperationException("Group reference not found");
 
     /// <summary>
