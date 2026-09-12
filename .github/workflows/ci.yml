@@ -19,6 +19,3 @@ jobs:
       project-path: Ico.Reader/Ico.Reader.csproj
       package-id: Ico.Reader
       test-project: Ico.Reader.Test/Ico.Reader.Test.csproj
-      dotnet-version: |
-        8.0.x
-        10.0.x
