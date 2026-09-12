@@ -192,11 +192,11 @@ public sealed class IcoData
     /// Determines the index of the preferred image for a given group based on its quality.
     /// </summary>
     /// <param name="groupName">The name of the ICO group.</param>
-    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type.</param>
+    /// <param name="icoType">The ICO type (Icon or Cursor) to specify the image type. Defaults to <see cref="IcoType.Icon"/>.</param>
     /// <param name="colorBitWeight">The relative importance of the color bit depth.</param>
     /// <param name="areaWeight">The relative importance of the pixel area.</param>
     /// <returns>The index of the preferred image within the global image reference list (<see cref="ImageReferences"/>), or -1 if the group is empty.</returns>
-    public int PreferredImageIndex(string groupName, IcoType icoType, float colorBitWeight = 1f, float areaWeight = 2f)
+    public int PreferredImageIndex(string groupName, IcoType icoType = IcoType.Icon, float colorBitWeight = 1f, float areaWeight = 2f)
     {
         var group = GetGroup(groupName, icoType);
         return PreferredImageIndex(group, colorBitWeight, areaWeight);

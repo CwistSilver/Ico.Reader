@@ -67,6 +67,24 @@ public sealed class PreferredImageIndexTests
     }
 
     [Fact]
+    public void PreferredImageIndex_ByGroupNameDefaultsToIcon()
+    {
+        var ico = Read("icon_multi.ico");
+
+        Assert.Equal(ico.PreferredImageIndex("1", IcoType.Icon), ico.PreferredImageIndex("1"));
+    }
+
+    [Fact]
+    public void PreferredImageIndex_ByGroupNameTakesWeightsWithTheTypeOmitted()
+    {
+        var ico = Read("icon_multi_mixed.ico");
+
+        var index = ico.PreferredImageIndex("1", colorBitWeight: 1f, areaWeight: 0f);
+
+        Assert.Equal(ico.PreferredImageIndex("1", IcoType.Icon, 1f, 0f), index);
+    }
+
+    [Fact]
     public void PreferredImageIndex_WorksForASingleImage()
     {
         var ico = Read("icon_32_8bpp.ico");
