@@ -1,9 +1,9 @@
 ﻿namespace Ico.Reader.PeDecoder.Models;
 
 /// <summary>
-/// One node of the resource tree. The tree nests by type, then by name, then by language, so the
-/// root holds a directory per <see cref="ResourceType"/> and the leaves hold
-/// <see cref="ResourceDataEntry"/> values.
+/// One node of the resource tree. The tree nests by type, then by resource, then by language: the
+/// root holds a directory per resource type, each of those holds a directory per resource, and those
+/// hold a <see cref="ResourceDataEntry"/> per language.
 /// </summary>
 public sealed record ResourceDirectory
 {
@@ -19,12 +19,14 @@ public sealed record ResourceDirectory
     internal const string RootName = "Root";
 
     /// <summary>
-    /// Name of this directory. At the first level this is the <see cref="ResourceType"/> name.
+    /// Name of this directory: <c>Root</c> for the root, the <see cref="ResourceType"/> name for a
+    /// resource type directory, and the resource's number or string name for a resource directory.
     /// </summary>
     public string Name { get; init; } = string.Empty;
 
     /// <summary>
-    /// Depth of this directory in the tree, counting the root as zero.
+    /// Depth of this directory in the tree: 1 for the root, 2 for a resource type and 3 for a single
+    /// resource.
     /// </summary>
     public int Level { get; init; }
 
@@ -78,14 +80,15 @@ public sealed record ResourceDirectory
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
 
     /// <summary>
-    /// Finds a first level directory by name, which is where resources are grouped by type.
+    /// Finds the directory holding every resource of one type. Only the root directory can answer
+    /// this.
     /// </summary>
     /// <param name="directoryName">
-    /// The directory name, normally a <see cref="ResourceType"/> name such as <c>RT_GROUP_ICON</c>.
+    /// The resource type name, normally a <see cref="ResourceType"/> name such as <c>RT_GROUP_ICON</c>.
     /// </param>
     /// <returns>
-    /// The directory, or <see langword="null"/> if this is not the first level or no directory
-    /// carries that name.
+    /// The directory, or <see langword="null"/> if this is not the root or the image holds no
+    /// resources of that type.
     /// </returns>
     public ResourceDirectory? GetDirectory(string directoryName)
     {
@@ -96,15 +99,16 @@ public sealed record ResourceDirectory
     }
 
     /// <summary>
-    /// Collects every resource held under a first level directory, taking one entry per language
-    /// subdirectory.
+    /// Collects every resource of one type, taking the entry for the first language each resource is
+    /// stored in. Only the root directory can answer this.
     /// </summary>
     /// <param name="directoryName">
-    /// The directory name, normally a <see cref="ResourceType"/> name such as <c>RT_ANICURSOR</c>.
+    /// The resource type name, normally a <see cref="ResourceType"/> name such as <c>RT_ANICURSOR</c>.
     /// </param>
     /// <returns>
-    /// The resources, or <see langword="null"/> if no directory carries that name. Resolve each one
-    /// to a file offset with <see cref="ResourceDataEntry.GetFileOffset"/> and <see cref="Section"/>.
+    /// The resources, or <see langword="null"/> if this is not the root or the image holds no
+    /// resources of that type. Resolve each one to a file offset with
+    /// <see cref="ResourceDataEntry.GetFileOffset"/> and <see cref="Section"/>.
     /// </returns>
     public ResourceDataEntry[]? GetResources(string directoryName)
     {
@@ -112,8 +116,8 @@ public sealed record ResourceDirectory
         if (foundDirectory is null)
             return null;
 
-        // A language subdirectory always carries exactly one data entry, but a malformed file can
-        // leave one empty, so those are skipped rather than indexed into blindly.
+        // A resource holds one data entry per language, but a malformed file can leave one with
+        // none, so those are skipped rather than indexed into blindly.
         return [.. foundDirectory.Subdirectories.Where(x => x.DataEntries.Count > 0).Select(x => x.DataEntries[0])];
     }
 }

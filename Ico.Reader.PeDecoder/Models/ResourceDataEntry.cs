@@ -6,7 +6,9 @@
 public sealed record ResourceDataEntry
 {
     /// <summary>
-    /// Identifier of the language subdirectory this entry was found under.
+    /// Identifier of the resource this entry holds, such as the ID of a cursor. Zero when the resource is
+    /// identified by name, which is then the <see cref="ResourceDirectory.Name"/> of the directory holding
+    /// this entry.
     /// </summary>
     public uint ID { get; init; }
 
