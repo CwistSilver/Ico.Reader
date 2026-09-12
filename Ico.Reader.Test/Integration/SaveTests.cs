@@ -31,7 +31,7 @@ public sealed class SaveTests : IDisposable
 
         await _exporter.SaveImageAsync(ico, ico.ImageReferences[0], path, TestContext.Current.CancellationToken);
 
-        Assert.Equal(ico.GetImage(0), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
+        Assert.Equal(ico.GetImage(0), await AsyncFile.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -41,11 +41,11 @@ public sealed class SaveTests : IDisposable
         // trailing bytes behind would show up.
         var ico = Read();
         var path = Path.Combine(_outputDirectory, "image.png");
-        await File.WriteAllBytesAsync(path, [.. Enumerable.Repeat((byte)0xAB, 10_000)], TestContext.Current.CancellationToken);
+        await AsyncFile.WriteAllBytesAsync(path, [.. Enumerable.Repeat((byte)0xAB, 10_000)], TestContext.Current.CancellationToken);
 
         await _exporter.SaveImageAsync(ico, ico.ImageReferences[0], path, TestContext.Current.CancellationToken);
 
-        Assert.Equal(ico.GetImage(0), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
+        Assert.Equal(ico.GetImage(0), await AsyncFile.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class SaveTests : IDisposable
 
         await _exporter.SaveImageAsync(ico, ico.GetImageReference(ico.Groups[0], 1), path, TestContext.Current.CancellationToken);
 
-        Assert.Equal(ico.GetImage(1), await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
+        Assert.Equal(ico.GetImage(1), await AsyncFile.ReadAllBytesAsync(path, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class SaveTests : IDisposable
 
         Assert.Equal(pe.Groups.Sum(x => x.Size), written.Length);
         foreach (var file in written)
-            _ = PngImage.Parse(await File.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
+            _ = PngImage.Parse(await AsyncFile.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -156,6 +156,6 @@ public sealed class SaveTests : IDisposable
         await _exporter.SaveAllImagesToDirectoryAsync(ico, _outputDirectory, TestContext.Current.CancellationToken);
 
         foreach (var file in Directory.GetFiles(Path.Combine(_outputDirectory, "icon_multi_png_bmp")))
-            _ = PngImage.Parse(await File.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
+            _ = PngImage.Parse(await AsyncFile.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
     }
 }

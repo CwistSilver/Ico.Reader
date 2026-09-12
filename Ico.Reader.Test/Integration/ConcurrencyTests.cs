@@ -252,7 +252,7 @@ public sealed class ConcurrencyTests
             Assert.Equal(expected, written.Select(x => (int)new FileInfo(x).Length).OrderBy(x => x));
 
             foreach (var file in written)
-                _ = PngImage.Parse(await File.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
+                _ = PngImage.Parse(await AsyncFile.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
         }
         finally
         {
