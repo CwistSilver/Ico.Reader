@@ -29,4 +29,5 @@ updates:
       test-tooling:
         patterns:
           - Microsoft.NET.Test.Sdk
+          - Microsoft.Testing.*
           - coverlet.*
