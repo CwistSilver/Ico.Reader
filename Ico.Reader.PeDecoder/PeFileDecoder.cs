@@ -20,6 +20,10 @@ public interface IPeDecoder
     /// </summary>
     /// <param name="stream">The stream to read.</param>
     /// <returns>The PE header.</returns>
+    /// <exception cref="InvalidDataException">
+    /// The DOS header does not point at a PE signature, or the optional header is malformed.
+    /// </exception>
+    /// <exception cref="EndOfStreamException">The stream ends inside the headers.</exception>
     PeHeader DecodePE(Stream stream);
 
     /// <summary>
@@ -30,6 +34,8 @@ public interface IPeDecoder
     /// <returns>
     /// The root of the resource tree, or <see langword="null"/> if the image holds no resources.
     /// </returns>
+    /// <exception cref="InvalidDataException">No section holds the resource tree.</exception>
+    /// <exception cref="EndOfStreamException">The stream ends inside the section table or the resource tree.</exception>
     ResourceDirectory? DecodeResourceDirectory(Stream stream, PeHeader peHeader);
 
     /// <summary>
@@ -40,7 +46,8 @@ public interface IPeDecoder
     bool IsPeFormat(MzHeader mzHeader);
 
     /// <summary>
-    /// Reports whether a stream holds a PE file.
+    /// Reports whether a stream holds a PE file: a DOS header that points at the PE signature. A file that only starts
+    /// with "MZ", such as a 16-bit executable, is not one.
     /// </summary>
     /// <param name="stream">The stream to inspect.</param>
     /// <returns><see langword="true"/> if the stream holds a PE file.</returns>
@@ -56,7 +63,7 @@ public sealed class PeFileDecoder : IPeDecoder
     public MzHeader DecodeMZ(Stream stream) => MzHeaderReader.Read(stream);
 
     /// <inheritdoc />
-    public bool IsPeFormat(Stream stream) => IsPeFormat(MzHeaderReader.Read(stream));
+    public bool IsPeFormat(Stream stream) => IsPeFormat(MzHeaderReader.Read(stream)) && PeHeaderReader.HasPeSignature(stream);
 
     /// <inheritdoc />
     public bool IsPeFormat(MzHeader mzHeader) => mzHeader.HasMzSignature;

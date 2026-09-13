@@ -12,6 +12,11 @@ internal static class PeHeaderReader
     /// <summary>The MZ stub stores the offset of the PE signature at this position.</summary>
     private const int PeSignatureOffsetPosition = 60;
 
+    private static readonly byte[] PeSignature = [(byte)'P', (byte)'E', 0, 0];
+
+    /// <exception cref="InvalidDataException">
+    /// The DOS header does not point at a PE signature, as with a 16-bit executable, or the optional header is malformed.
+    /// </exception>
     public static PeHeader Read(Stream stream)
     {
         var headerOffset = ReadHeaderOffset(stream);
@@ -21,6 +26,9 @@ internal static class PeHeaderReader
         stream.ReadExactly(buffer);
 
         ReadOnlySpan<byte> data = buffer;
+        if (!data.Slice(0, PeSignature.Length).SequenceEqual(PeSignature))
+            throw new InvalidDataException($"The DOS header points at offset {headerOffset}, which does not hold a PE signature.");
+
         var sizeOfOptionalHeader = MemoryMarshal.Read<ushort>(data.Slice(20, 2));
 
         // The optional header sits directly after this one, so it can be read before the header it
@@ -39,6 +47,27 @@ internal static class PeHeaderReader
             HeaderOffset = headerOffset,
             Optional = optional
         };
+    }
+
+    /// <summary>
+    /// Reports whether the offset the DOS header names holds the PE signature. Files that merely start with "MZ", such
+    /// as 16-bit executables, do not.
+    /// </summary>
+    public static bool HasPeSignature(Stream stream)
+    {
+        if (stream.Length < PeSignatureOffsetPosition + sizeof(uint))
+            return false;
+
+        var headerOffset = ReadHeaderOffset(stream);
+        if (headerOffset > stream.Length - PeSignature.Length)
+            return false;
+
+        stream.Position = headerOffset;
+
+        Span<byte> signature = stackalloc byte[PeSignature.Length];
+        stream.ReadExactly(signature);
+
+        return ((ReadOnlySpan<byte>)signature).SequenceEqual(PeSignature);
     }
 
     private static uint ReadHeaderOffset(Stream stream)

@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 using Ico.Reader.PeDecoder.Models;
 using Ico.Reader.PeDecoder.Utils;
@@ -14,7 +14,11 @@ internal static class OptionalHeaderReader
     private const int Pe32DataDirectoryOffset = 96;
     private const int Pe32PlusDataDirectoryOffset = 112;
     private const int DataDirectorySize = 8;
+    private const uint MaxDataDirectories = 16;
 
+    /// <exception cref="InvalidDataException">
+    /// The magic is neither PE32 nor PE32+, or the header is shorter than the fields that precede the data directories.
+    /// </exception>
     public static OptionalHeader? Read(Stream stream, uint peHeaderOffset, ushort sizeOfOptionalHeader)
     {
         if (sizeOfOptionalHeader == 0)
@@ -24,13 +28,24 @@ internal static class OptionalHeaderReader
 
         return PooledStreamReader.Read(stream, sizeOfOptionalHeader, data =>
         {
+            if (data.Length < 2)
+                throw new InvalidDataException("The optional header is too short to name its format.");
+
             var magic = (MagicNumber)ReadUInt16(data, 0);
+            if (magic is not (MagicNumber.PE32 or MagicNumber.PE32Plus))
+                throw new InvalidDataException($"The optional header magic 0x{(ushort)magic:X} is neither PE32 nor PE32+.");
 
             // PE32+ has no BaseOfData and widens ImageBase and the stack and heap sizes to 64 bits, which moves the
             // fields after them. Offsets follow the PE format's Windows-specific fields table.
             var isPe32 = magic == MagicNumber.PE32;
             var directoryBase = isPe32 ? Pe32DataDirectoryOffset : Pe32PlusDataDirectoryOffset;
-            var optionalHeader = new OptionalHeader
+            if (data.Length < directoryBase)
+                throw new InvalidDataException($"The {magic} optional header is {data.Length} bytes, shorter than the {directoryBase} bytes of fields before its data directories.");
+
+            var numberOfRvaAndSizes = ReadUInt32(data, isPe32 ? 92 : 108);
+            var directoryCount = DataDirectoryCount(data.Length - directoryBase, numberOfRvaAndSizes);
+
+            return new OptionalHeader
             {
                 Magic = magic,
                 MajorLinkerVersion = data[2],
@@ -62,38 +77,47 @@ internal static class OptionalHeaderReader
                 SizeOfHeapReserve = isPe32 ? ReadUInt32(data, 80) : ReadUInt64(data, 88),
                 SizeOfHeapCommit = isPe32 ? ReadUInt32(data, 84) : ReadUInt64(data, 96),
                 LoaderFlags = ReadUInt32(data, isPe32 ? 88 : 104),
-                NumberOfRvaAndSizes = ReadUInt32(data, isPe32 ? 92 : 108),
+                NumberOfRvaAndSizes = numberOfRvaAndSizes,
 
-                ExportTable = ReadDataDirectory(data, directoryBase + (0 * DataDirectorySize)),
-                ImportTable = ReadDataDirectory(data, directoryBase + (1 * DataDirectorySize)),
-                ResourceTable = ReadDataDirectory(data, directoryBase + (2 * DataDirectorySize)),
-                ExceptionTable = ReadDataDirectory(data, directoryBase + (3 * DataDirectorySize)),
-                CertificateTable = ReadDataDirectory(data, directoryBase + (4 * DataDirectorySize)),
-                BaseRelocationTable = ReadDataDirectory(data, directoryBase + (5 * DataDirectorySize)),
-                Debug = ReadDataDirectory(data, directoryBase + (6 * DataDirectorySize)),
-                Architecture = ReadDataDirectory(data, directoryBase + (7 * DataDirectorySize)),
-                GlobalPtr = ReadDataDirectory(data, directoryBase + (8 * DataDirectorySize)),
-                TLSTable = ReadDataDirectory(data, directoryBase + (9 * DataDirectorySize)),
-                LoadConfigTable = ReadDataDirectory(data, directoryBase + (10 * DataDirectorySize)),
-                BoundImport = ReadDataDirectory(data, directoryBase + (11 * DataDirectorySize)),
-                IAT = ReadDataDirectory(data, directoryBase + (12 * DataDirectorySize)),
-                DelayImportDescriptor = ReadDataDirectory(data, directoryBase + (13 * DataDirectorySize)),
-                CLRRuntimeHeader = ReadDataDirectory(data, directoryBase + (14 * DataDirectorySize)),
-                Reserved = ReadDataDirectory(data, directoryBase + (15 * DataDirectorySize))
+                ExportTable = ReadDataDirectory(data, directoryBase, 0, directoryCount),
+                ImportTable = ReadDataDirectory(data, directoryBase, 1, directoryCount),
+                ResourceTable = ReadDataDirectory(data, directoryBase, 2, directoryCount),
+                ExceptionTable = ReadDataDirectory(data, directoryBase, 3, directoryCount),
+                CertificateTable = ReadDataDirectory(data, directoryBase, 4, directoryCount),
+                BaseRelocationTable = ReadDataDirectory(data, directoryBase, 5, directoryCount),
+                Debug = ReadDataDirectory(data, directoryBase, 6, directoryCount),
+                Architecture = ReadDataDirectory(data, directoryBase, 7, directoryCount),
+                GlobalPtr = ReadDataDirectory(data, directoryBase, 8, directoryCount),
+                TLSTable = ReadDataDirectory(data, directoryBase, 9, directoryCount),
+                LoadConfigTable = ReadDataDirectory(data, directoryBase, 10, directoryCount),
+                BoundImport = ReadDataDirectory(data, directoryBase, 11, directoryCount),
+                IAT = ReadDataDirectory(data, directoryBase, 12, directoryCount),
+                DelayImportDescriptor = ReadDataDirectory(data, directoryBase, 13, directoryCount),
+                CLRRuntimeHeader = ReadDataDirectory(data, directoryBase, 14, directoryCount),
+                Reserved = ReadDataDirectory(data, directoryBase, 15, directoryCount)
             };
-
-            if (optionalHeader.Reserved.VirtualAddress != 0 || optionalHeader.Reserved.Size != 0)
-                throw new InvalidDataException("The reserved data directory must be empty.");
-
-            return optionalHeader;
         });
     }
 
-    private static ImageDataDirectory ReadDataDirectory(ReadOnlySpan<byte> optionalHeaderSpan, int offset) => new()
+    /// <summary>
+    /// The Windows loader reads no data directory past <c>NumberOfRvaAndSizes</c>, and none can lie past the end of the
+    /// optional header.
+    /// </summary>
+    private static int DataDirectoryCount(int bytesAfterFixedFields, uint numberOfRvaAndSizes)
+        => (int)Math.Min(Math.Min(numberOfRvaAndSizes, MaxDataDirectories), (uint)(bytesAfterFixedFields / DataDirectorySize));
+
+    private static ImageDataDirectory? ReadDataDirectory(ReadOnlySpan<byte> optionalHeaderSpan, int directoryBase, int index, int directoryCount)
     {
-        VirtualAddress = ReadUInt32(optionalHeaderSpan, offset),
-        Size = ReadUInt32(optionalHeaderSpan, offset + 4)
-    };
+        if (index >= directoryCount)
+            return null;
+
+        var offset = directoryBase + (index * DataDirectorySize);
+        return new ImageDataDirectory
+        {
+            VirtualAddress = ReadUInt32(optionalHeaderSpan, offset),
+            Size = ReadUInt32(optionalHeaderSpan, offset + 4)
+        };
+    }
 
     private static ushort ReadUInt16(ReadOnlySpan<byte> data, int offset) => MemoryMarshal.Read<ushort>(data.Slice(offset, 2));
 

@@ -164,17 +164,12 @@ internal static class ResourceReader
 
         ReadOnlySpan<byte> readOnlyData = data;
 
-        var dataEntry = new ResourceDataEntry
+        return new ResourceDataEntry
         {
             DataRVA = MemoryMarshal.Read<uint>(readOnlyData.Slice(0, 4)),
             Size = MemoryMarshal.Read<uint>(readOnlyData.Slice(4, 4)),
             Codepage = MemoryMarshal.Read<uint>(readOnlyData.Slice(8, 4)),
             Reserved = MemoryMarshal.Read<uint>(readOnlyData.Slice(12, 4))
         };
-
-        if (dataEntry.Reserved != 0)
-            throw new InvalidDataException($"{nameof(ResourceDataEntry)}: Reserved must be 0 but was {dataEntry.Reserved}.");
-
-        return dataEntry;
     }
 }

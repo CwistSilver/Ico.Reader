@@ -26,14 +26,17 @@ internal sealed record ResourceLeaf(uint Type, uint Id, uint Language, int IdEnt
 /// </summary>
 internal static class PeResources
 {
+    public const int SectionHeaderSize = 40;
+    public const int DataDirectorySize = 8;
+
     private const int PeHeaderOffsetField = 60;
     private const int SizeOfOptionalHeaderField = 20;
     private const int SectionCountField = 6;
     private const int CoffHeaderSize = 24;
-    private const int SectionHeaderSize = 40;
+    private const int Pe32NumberOfRvaAndSizesField = 92;
+    private const int Pe32PlusNumberOfRvaAndSizesField = 108;
     private const int DirectoryHeaderSize = 16;
     private const int DirectoryEntrySize = 8;
-    private const int DataDirectorySize = 8;
     private const int Pe32DataDirectories = 96;
     private const int Pe32PlusDataDirectories = 112;
     private const ushort Pe32PlusMagic = 0x20B;
@@ -48,6 +51,11 @@ internal static class PeResources
 
     public static bool IsPe32Plus(byte[] pe) => BitConverter.ToUInt16(pe, OptionalHeaderOffset(pe)) == Pe32PlusMagic;
 
+    public static int NumberOfRvaAndSizesOffset(byte[] pe)
+        => OptionalHeaderOffset(pe) + (IsPe32Plus(pe) ? Pe32PlusNumberOfRvaAndSizesField : Pe32NumberOfRvaAndSizesField);
+
+    public static int SectionCount(byte[] pe) => BitConverter.ToUInt16(pe, PeHeaderOffset(pe) + SectionCountField);
+
     public static int DataDirectoryOffset(byte[] pe, int index)
         => OptionalHeaderOffset(pe) + (IsPe32Plus(pe) ? Pe32PlusDataDirectories : Pe32DataDirectories) + (index * DataDirectorySize);
 
@@ -59,9 +67,8 @@ internal static class PeResources
     public static IReadOnlyList<PeSection> Sections(byte[] pe)
     {
         var tableOffset = SectionTableOffset(pe);
-        var count = BitConverter.ToUInt16(pe, PeHeaderOffset(pe) + SectionCountField);
 
-        return [.. Enumerable.Range(0, count).Select(i =>
+        return [.. Enumerable.Range(0, SectionCount(pe)).Select(i =>
         {
             var offset = tableOffset + (i * SectionHeaderSize);
             return new PeSection(

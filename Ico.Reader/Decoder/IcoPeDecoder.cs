@@ -79,6 +79,8 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         {
             var fileOffset = icoResourceGroup[i].GetFileOffset(resourceSection);
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
+            if (groupHeader.ImageType != IconDirectoryEntry.ImageType)
+                continue;
 
             stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
             var parsedEntries = DirectoryEntryParser.ReadResourceEntries<IconDirectoryEntry>(stream, groupHeader);
@@ -154,6 +156,8 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         {
             var fileOffset = curResourceGroup[i].GetFileOffset(resourceSection);
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
+            if (groupHeader.ImageType != CursorDirectoryEntry.ImageType)
+                continue;
 
             stream.Position = fileOffset + IcoHeaderReader.HeaderSize;
             var parsedEntries = DirectoryEntryParser.ReadResourceEntries<CursorDirectoryEntry>(stream, groupHeader);

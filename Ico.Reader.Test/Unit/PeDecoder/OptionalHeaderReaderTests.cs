@@ -159,6 +159,80 @@ public sealed class OptionalHeaderReaderTests
     }
 
     /// <summary>
+    /// The optional header's size and <c>NumberOfRvaAndSizes</c> say how many data directories follow. Windows reads no
+    /// further, so a linker may leave the trailing ones out.
+    /// </summary>
+    [Fact]
+    public void Read_StopsAtTheDataDirectoriesTheHeaderHolds()
+    {
+        const int FifteenDirectories = 96 + (15 * 8);
+        var bytes = new HeaderWriter(FifteenDirectories)
+            .UInt16(0, (ushort)MagicNumber.PE32)
+            .UInt32(92, 15)
+            .UInt32(96 + (2 * 8), 0x4000)
+            .UInt32(96 + (2 * 8) + 4, 0x200)
+            .Build();
+
+        var header = OptionalHeaderReader.Read(new MemoryStream(bytes), 0, FifteenDirectories);
+
+        Assert.NotNull(header);
+        Assert.Equivalent(new { VirtualAddress = 0x4000u, Size = 0x200u }, header.ResourceTable);
+        Assert.NotNull(header.CLRRuntimeHeader);
+        Assert.Null(header.Reserved);
+    }
+
+    [Fact]
+    public void Read_IgnoresDataDirectoriesBeyondNumberOfRvaAndSizes()
+    {
+        var bytes = new HeaderWriter(Pe32Size)
+            .UInt16(0, (ushort)MagicNumber.PE32)
+            .UInt32(92, 2)
+            .UInt32(96 + (2 * 8), 0x4000)
+            .UInt32(96 + (2 * 8) + 4, 0x200)
+            .Build();
+
+        var header = OptionalHeaderReader.Read(new MemoryStream(bytes), 0, Pe32Size);
+
+        Assert.NotNull(header);
+        Assert.NotNull(header.ImportTable);
+        Assert.Null(header.ResourceTable);
+    }
+
+    [Fact]
+    public void Read_KeepsAReservedDataDirectoryThatIsNotEmpty()
+    {
+        var bytes = new HeaderWriter(Pe32Size)
+            .UInt16(0, (ushort)MagicNumber.PE32)
+            .UInt32(92, 16)
+            .UInt32(96 + (15 * 8), 0x1234)
+            .Build();
+
+        var header = OptionalHeaderReader.Read(new MemoryStream(bytes), 0, Pe32Size);
+
+        Assert.NotNull(header);
+        Assert.Equal(0x1234u, header.Reserved!.VirtualAddress);
+    }
+
+    [Theory]
+    [InlineData((ushort)MagicNumber.PE32, 95)]
+    [InlineData((ushort)MagicNumber.PE32Plus, 111)]
+    public void Read_ThrowsForAHeaderShorterThanItsFixedFields(ushort magic, ushort size)
+    {
+        var bytes = new HeaderWriter(size).UInt16(0, magic).Build();
+
+        Assert.Throws<InvalidDataException>(() => OptionalHeaderReader.Read(new MemoryStream(bytes), 0, size));
+    }
+
+    [Fact]
+    public void Read_ThrowsForAMagicThatIsNeitherPe32NorPe32Plus()
+    {
+        const ushort RomImage = 0x107;
+        var bytes = new HeaderWriter(Pe32Size).UInt16(0, RomImage).UInt32(92, 16).Build();
+
+        Assert.Throws<InvalidDataException>(() => OptionalHeaderReader.Read(new MemoryStream(bytes), 0, Pe32Size));
+    }
+
+    /// <summary>
     /// Lays out an optional header behind the space the PE signature and COFF header take up, where the reader looks
     /// for it.
     /// </summary>

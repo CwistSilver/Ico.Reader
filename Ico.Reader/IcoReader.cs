@@ -151,9 +151,9 @@ public sealed class IcoReader
                 ? ReadFromExe(stream, dataSource)
                 : ReadFromIco(stream, dataSource);
         }
-        catch (EndOfStreamException)
+        catch (Exception exception) when (exception is EndOfStreamException or InvalidDataException)
         {
-            // Truncated input is a parse failure, and every Read overload reports those as null.
+            // Truncated or malformed input is a parse failure, and every Read overload reports those as null.
             return null;
         }
     }
