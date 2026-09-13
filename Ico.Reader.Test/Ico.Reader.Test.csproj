@@ -18,10 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ico.Reader\Ico.Reader.csproj" />
-    <!-- Ico.Reader hides PeDecoder from consumers; the tests assert on its DI registration. -->
     <ProjectReference Include="..\Ico.Reader.PeDecoder\Ico.Reader.PeDecoder.csproj" />
-    <!-- Ico.Reader routes its span-based reads through CommonShims, so the shims are covered
-         directly as well as through the rest of the suite. -->
     <ProjectReference Include="..\Ico.Reader.CommonShims\Ico.Reader.CommonShims.csproj" />
     <ProjectReference Include="..\Ico.Reader.Test.PeFixture\Ico.Reader.Test.PeFixture.csproj"
                       ReferenceOutputAssembly="false"
@@ -32,8 +29,6 @@
     <None Include="Resources\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- The PE fixture is test data, not a dependency, so it is copied next to the other fixtures
-       rather than referenced. -->
   <Target Name="CopyPeFixture" AfterTargets="Build">
     <MSBuild Projects="..\Ico.Reader.Test.PeFixture\Ico.Reader.Test.PeFixture.csproj"
              Targets="GetTargetPath"

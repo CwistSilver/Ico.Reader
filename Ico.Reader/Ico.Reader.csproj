@@ -36,7 +36,6 @@
     <ProjectReference Include="..\Ico.Reader.PeDecoder\Ico.Reader.PeDecoder.csproj" PrivateAssets="All" />
   </ItemGroup>
 
-  <!-- Readers and parsers are implementation details, so the tests reach them as internals. -->
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Ico.Reader.Test</_Parameter1>
