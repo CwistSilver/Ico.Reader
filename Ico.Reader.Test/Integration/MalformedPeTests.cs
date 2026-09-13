@@ -1,12 +1,15 @@
-﻿namespace Ico.Reader.Test.Integration;
+namespace Ico.Reader.Test.Integration;
 
 /// <summary>
 /// Every length and offset in a PE file is attacker controlled. These cases feed the decoder headers
-/// that declare absurd sizes and confirm it fails as an ordinary exception instead of exhausting the
-/// stack, which would be an uncatchable process kill.
+/// that declare absurd sizes and confirm reading reports the file as unreadable, or reads what it can,
+/// rather than throwing or exhausting the stack, which would be an uncatchable process kill.
 /// </summary>
 public sealed class MalformedPeTests
 {
+    private const int DirectoryHeaderSize = 16;
+    private const int SubdirectoryOffsetField = 4;
+
     private readonly IcoReader _reader = new();
 
     private static byte[] PeFixtureBytes() => File.ReadAllBytes(TestFiles.PeFixture);
@@ -21,10 +24,7 @@ public sealed class MalformedPeTests
         var pe = PeFixtureBytes();
         BitConverter.GetBytes(ushort.MaxValue).CopyTo(pe, PeHeaderOffset(pe) + 6);
 
-        var exception = Record.Exception(() => _reader.Read(pe));
-
-        Assert.True(exception is null or IOException or InvalidDataException or ArgumentException or IndexOutOfRangeException or ArgumentOutOfRangeException,
-            $"Unexpected exception type: {exception}");
+        Assert.Null(Record.Exception(() => _reader.Read(pe)));
     }
 
     [Fact]
@@ -33,10 +33,7 @@ public sealed class MalformedPeTests
         var pe = PeFixtureBytes();
         BitConverter.GetBytes(ushort.MaxValue).CopyTo(pe, PeHeaderOffset(pe) + 20);
 
-        var exception = Record.Exception(() => _reader.Read(pe));
-
-        Assert.True(exception is null or IOException or InvalidDataException or ArgumentException or IndexOutOfRangeException or ArgumentOutOfRangeException,
-            $"Unexpected exception type: {exception}");
+        Assert.Null(Record.Exception(() => _reader.Read(pe)));
     }
 
     [Fact]
@@ -45,10 +42,7 @@ public sealed class MalformedPeTests
         var pe = PeFixtureBytes();
         var truncated = pe.AsSpan(0, pe.Length / 4).ToArray();
 
-        var exception = Record.Exception(() => _reader.Read(truncated));
-
-        Assert.True(exception is null or IOException or InvalidDataException or ArgumentException or IndexOutOfRangeException or ArgumentOutOfRangeException,
-            $"Unexpected exception type: {exception}");
+        Assert.Null(Record.Exception(() => _reader.Read(truncated)));
     }
 
     [Fact]
@@ -66,14 +60,8 @@ public sealed class MalformedPeTests
         var selfReference = root + (int)typeDirectoryOffset + DirectoryHeaderSize + SubdirectoryOffsetField;
         BitConverter.GetBytes(0x80000000u | typeDirectoryOffset).CopyTo(pe, selfReference);
 
-        var exception = Record.Exception(() => _reader.Read(pe));
-
-        Assert.True(exception is null or IOException or InvalidDataException or ArgumentException or IndexOutOfRangeException or ArgumentOutOfRangeException,
-            $"Unexpected exception type: {exception}");
+        Assert.Null(Record.Exception(() => _reader.Read(pe)));
     }
-
-    private const int DirectoryHeaderSize = 16;
-    private const int SubdirectoryOffsetField = 4;
 
     [Fact]
     public void Read_StillReadsTheUntouchedFixture()

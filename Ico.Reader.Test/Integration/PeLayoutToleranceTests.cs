@@ -116,6 +116,28 @@ public sealed class PeLayoutToleranceTests
         Assert.Equal(expected.ImageReferences.Select(expected.GetImage), actual.ImageReferences.Select(actual.GetImage));
     }
 
+    /// <summary>
+    /// UPX compresses every icon outside the first icon group, leaving their data entries pointing at memory the
+    /// unpacker only fills at run time. Windows still loads the first group of such a file.
+    /// </summary>
+    [Fact]
+    public void Read_KeepsTheGroupsWhoseImagesAreStoredInTheFile()
+    {
+        var baseline = _reader.Read(PeFixtureBytes())!;
+        var pe = PeFixtureBytes();
+        var firstGroupImages = PeResources.GroupResourceIds(pe, PeResources.Leaf(pe, ResourceType.RT_GROUP_ICON, 1));
+
+        foreach (var leaf in PeResources.LeavesOf(pe, ResourceType.RT_ICON).Where(x => !firstGroupImages.Contains((ushort)x.Id)))
+            PeResources.WriteUInt32(pe, leaf.DataEntryOffset, 0x7FFF_0000);
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        Assert.Equal(["1"], ico.IconGroups.Select(x => x.Name));
+        Assert.Equal(baseline.GetImage(baseline.GetIconGroup("1"), 0), ico.GetImage(ico.GetIconGroup("1"), 0));
+        Assert.Equal(baseline.CursorGroups.Select(Describe), ico.CursorGroups.Select(Describe));
+    }
+
     [Fact]
     public void Read_ReturnsNullForAnMzFileThatIsNotAPe() => Assert.Null(_reader.Read(NeExecutable()));
 

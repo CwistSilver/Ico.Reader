@@ -79,4 +79,24 @@ public sealed class SectionHeader
 
         return rva - VirtualAddress + PointerToRawData;
     }
+
+    /// <summary>
+    /// Translates the address of <paramref name="size"/> bytes into an offset within the file, provided the raw data of
+    /// this section holds all of them.
+    /// </summary>
+    internal bool TryGetFileOffset(uint rva, uint size, out uint fileOffset)
+    {
+        fileOffset = 0;
+
+        var rawDataEnd = (ulong)VirtualAddress + SizeOfRawData;
+        if (rva < VirtualAddress || (ulong)rva + size > rawDataEnd)
+            return false;
+
+        var offset = (ulong)rva - VirtualAddress + PointerToRawData;
+        if (offset > uint.MaxValue)
+            return false;
+
+        fileOffset = (uint)offset;
+        return true;
+    }
 }

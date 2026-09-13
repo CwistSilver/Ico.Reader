@@ -71,10 +71,10 @@ public sealed record ResourceDirectory
     public List<ResourceDataEntry> DataEntries { get; init; } = [];
 
     /// <summary>
-    /// The section the resource tree was read from, kept so that resolving a data entry to a file
-    /// offset does not have to re-read the section table. Only set on the root directory.
+    /// The section table of the image the tree was read from, used to resolve data entries to file offsets with
+    /// <see cref="ResourceDataEntry.TryGetFileOffset"/>. Only set on the root directory.
     /// </summary>
-    public SectionHeader? Section { get; init; }
+    public IReadOnlyList<SectionHeader> Sections { get; init; } = [];
 
     /// <inheritdoc />
     public override string ToString() => $"{Name} [DataEntries: {DataEntries.Count}] [Subdirectories: {Subdirectories.Count}]";
@@ -108,7 +108,7 @@ public sealed record ResourceDirectory
     /// <returns>
     /// The resources, or <see langword="null"/> if this is not the root or the image holds no
     /// resources of that type. Resolve each one to a file offset with
-    /// <see cref="ResourceDataEntry.GetFileOffset"/> and <see cref="Section"/>.
+    /// <see cref="ResourceDataEntry.TryGetFileOffset"/> and <see cref="Sections"/>.
     /// </returns>
     public ResourceDataEntry[]? GetResources(string directoryName)
     {

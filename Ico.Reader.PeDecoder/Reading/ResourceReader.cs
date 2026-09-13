@@ -29,7 +29,7 @@ internal static class ResourceReader
 
         var rootResourceDirectory = ReadResourceDirectory(stream, rootOffset, rootOffset, [], 1);
 
-        return rootResourceDirectory with { Name = ResourceDirectory.RootName, Section = rsrcSection };
+        return rootResourceDirectory with { Name = ResourceDirectory.RootName, Sections = sectionHeaders };
     }
 
     /// <summary>

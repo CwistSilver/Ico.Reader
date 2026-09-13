@@ -37,29 +37,27 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         if (readResourceDirectory is null)
             return decodedIcoResult;
 
-        // The section is resolved once here; every entry offset below is derived from it rather
-        // than by re-reading the section table.
-        var resourceSection = readResourceDirectory.Section
-            ?? throw new InvalidDataException("The resource directory does not carry the section it was read from.");
-
-        AddIcoGroups(decodedIcoResult, readResourceDirectory, resourceSection, stream, icoDecoder);
-        AddCurGroups(decodedIcoResult, readResourceDirectory, resourceSection, stream, icoDecoder);
+        AddIcoGroups(decodedIcoResult, readResourceDirectory, stream, icoDecoder);
+        AddCurGroups(decodedIcoResult, readResourceDirectory, stream, icoDecoder);
 
         return decodedIcoResult;
     }
 
-    private void AddIcoGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, SectionHeader resourceSection, Stream stream, IIcoDecoder icoDecoder)
+    private void AddIcoGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, Stream stream, IIcoDecoder icoDecoder)
     {
         var icoResource = readResourceDirectory.GetResources(ResourceType.RT_ICON.ToString());
         if (icoResource is null)
             return;
 
+        var sections = readResourceDirectory.Sections;
         decodedIcoResult.References.Capacity = icoResource.Length;
 
         for (var i = 0; i < icoResource.Length; i++)
         {
             var icoDataEntry = icoResource[i];
-            var fileOffset = icoDataEntry.GetFileOffset(resourceSection);
+            if (!icoDataEntry.TryGetFileOffset(sections, out var fileOffset))
+                continue;
+
             var reference = ImageReferenceReader.FromStream(stream, fileOffset, icoDataEntry.Size, icoDecoder);
             if (reference is null)
                 continue;
@@ -77,7 +75,9 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         for (var i = 0; i < icoResourceGroup.Length; i++)
         {
-            var fileOffset = icoResourceGroup[i].GetFileOffset(resourceSection);
+            if (!icoResourceGroup[i].TryGetFileOffset(sections, out var fileOffset))
+                continue;
+
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
             if (groupHeader.ImageType != IconDirectoryEntry.ImageType)
                 continue;
@@ -111,12 +111,13 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         }
     }
 
-    private void AddCurGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, SectionHeader resourceSection, Stream stream, IIcoDecoder icoDecoder)
+    private void AddCurGroups(DecodedIcoResult decodedIcoResult, ResourceDirectory readResourceDirectory, Stream stream, IIcoDecoder icoDecoder)
     {
         var curResource = readResourceDirectory.GetResources(ResourceType.RT_CURSOR.ToString());
         if (curResource is null)
             return;
 
+        var sections = readResourceDirectory.Sections;
         decodedIcoResult.References.Capacity += curResource.Length;
 
         // The resource count comes from the file, so allocating per iteration would let a crafted
@@ -126,7 +127,8 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         for (var i = 0; i < curResource.Length; i++)
         {
             var curDataEntry = curResource[i];
-            var fileOffset = curDataEntry.GetFileOffset(resourceSection);
+            if (!curDataEntry.TryGetFileOffset(sections, out var fileOffset))
+                continue;
 
             stream.Position = fileOffset;
             stream.ReadExactly(hotspotData);
@@ -154,7 +156,9 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         for (var i = 0; i < curResourceGroup.Length; i++)
         {
-            var fileOffset = curResourceGroup[i].GetFileOffset(resourceSection);
+            if (!curResourceGroup[i].TryGetFileOffset(sections, out var fileOffset))
+                continue;
+
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
             if (groupHeader.ImageType != CursorDirectoryEntry.ImageType)
                 continue;

@@ -14,7 +14,7 @@ public sealed record ResourceDataEntry
 
     /// <summary>
     /// Address of the resource bytes relative to the image base once loaded. Use
-    /// <see cref="GetFileOffset"/> to turn it into a file offset.
+    /// <see cref="TryGetFileOffset"/> to turn it into a file offset.
     /// </summary>
     public uint DataRVA { get; init; }
 
@@ -34,13 +34,26 @@ public sealed record ResourceDataEntry
     public uint Reserved { get; init; }
 
     /// <summary>
-    /// Resolves this entry's virtual address to a file offset within the resource section.
+    /// Resolves this entry's virtual address to the file offset of its bytes.
     /// </summary>
-    /// <param name="resourceSection">
-    /// The section the resource tree was read from, available as <see cref="ResourceDirectory.Section"/>.
-    /// </param>
-    /// <returns>The offset of the resource bytes within the file.</returns>
-    public uint GetFileOffset(SectionHeader resourceSection) => resourceSection.GetFileOffset(DataRVA);
+    /// <remarks>
+    /// Resolving fails when no section stores every byte of the resource in the file. A packer can leave data entries
+    /// pointing at memory it only fills at run time, as UPX does for the icons it compresses.
+    /// </remarks>
+    /// <param name="sections">The section table of the image, available as <see cref="ResourceDirectory.Sections"/>.</param>
+    /// <param name="fileOffset">The offset of the resource bytes within the file, when resolving succeeds.</param>
+    /// <returns><see langword="true"/> if the file holds the resource bytes.</returns>
+    public bool TryGetFileOffset(IReadOnlyList<SectionHeader> sections, out uint fileOffset)
+    {
+        foreach (var section in sections)
+        {
+            if (section.TryGetFileOffset(DataRVA, Size, out fileOffset))
+                return true;
+        }
+
+        fileOffset = 0;
+        return false;
+    }
 
     /// <inheritdoc />
     public override string ToString() => $"ID: {ID}, DataRVA: {DataRVA}, Size: {Size}, Codepage: {Codepage}, Reserved: {Reserved}";

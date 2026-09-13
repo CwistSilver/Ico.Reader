@@ -42,6 +42,10 @@ internal static class PeResources
     private const ushort Pe32PlusMagic = 0x20B;
     private const int ResourceTableIndex = 2;
     private const uint OffsetMask = 0x7FFFFFFF;
+    private const int GroupImageCountField = 4;
+    private const int GroupHeaderSize = 6;
+    private const int GroupEntrySize = 14;
+    private const int GroupEntryResourceIdField = 12;
 
     public static int PeHeaderOffset(byte[] pe) => BitConverter.ToInt32(pe, PeHeaderOffsetField);
 
@@ -126,6 +130,21 @@ internal static class PeResources
         => Leaves(pe).Where(leaf => leaf.Type == (uint)type);
 
     public static int DataOffset(byte[] pe, ResourceLeaf leaf) => RvaToOffset(pe, leaf.DataRva);
+
+    /// <summary>
+    /// Where the resource id of an entry of an RT_GROUP_ICON or RT_GROUP_CURSOR directory is stored.
+    /// </summary>
+    public static int GroupEntryResourceIdOffset(byte[] pe, ResourceLeaf group, int entryIndex)
+        => DataOffset(pe, group) + GroupHeaderSize + (entryIndex * GroupEntrySize) + GroupEntryResourceIdField;
+
+    /// <summary>
+    /// The ids of the RT_ICON or RT_CURSOR resources an RT_GROUP_ICON or RT_GROUP_CURSOR directory names.
+    /// </summary>
+    public static IReadOnlyList<ushort> GroupResourceIds(byte[] pe, ResourceLeaf group)
+    {
+        var entryCount = BitConverter.ToUInt16(pe, DataOffset(pe, group) + GroupImageCountField);
+        return [.. Enumerable.Range(0, entryCount).Select(i => BitConverter.ToUInt16(pe, GroupEntryResourceIdOffset(pe, group, i)))];
+    }
 
     public static void WriteUInt16(byte[] pe, int offset, ushort value) => BitConverter.GetBytes(value).CopyTo(pe, offset);
 
