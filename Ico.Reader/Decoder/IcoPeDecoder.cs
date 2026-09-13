@@ -65,17 +65,13 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             decodedIcoResult.References.Add(reference with { Id = (int)icoDataEntry.ID });
         }
 
-        var icoResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_ICON.ToString());
-        if (icoResourceGroup is null)
+        var groupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_ICON.ToString());
+        if (groupDirectory is null)
             return;
 
-        var icoResourceGroupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_ICON.ToString());
-        if (icoResourceGroupDirectory is null)
-            return;
-
-        for (var i = 0; i < icoResourceGroup.Length; i++)
+        foreach (var group in groupDirectory.Subdirectories)
         {
-            if (!icoResourceGroup[i].TryGetFileOffset(sections, out var fileOffset))
+            if (!TryGetGroupDataOffset(group, sections, out var fileOffset))
                 continue;
 
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
@@ -104,7 +100,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
             decodedIcoResult.IcoGroups.Add(new IconGroup
             {
-                Name = icoResourceGroupDirectory.Subdirectories[i].Name,
+                Name = group.Name,
                 Header = groupHeader,
                 DirectoryEntries = [.. directoryEntries]
             });
@@ -144,19 +140,15 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             decodedIcoResult.References.Add(reference with { Id = (int)curDataEntry.ID, IcoType = IcoType.Cursor, HotspotX = hotspotX, HotspotY = hotspotY });
         }
 
-        var curResourceGroup = readResourceDirectory.GetResources(ResourceType.RT_GROUP_CURSOR.ToString());
-        if (curResourceGroup is null)
+        var groupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_CURSOR.ToString());
+        if (groupDirectory is null)
             return;
 
-        var curResourceGroupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_CURSOR.ToString());
-        if (curResourceGroupDirectory is null)
-            return;
+        decodedIcoResult.IcoGroups.Capacity += groupDirectory.Subdirectories.Count;
 
-        decodedIcoResult.IcoGroups.Capacity += curResourceGroup.Length;
-
-        for (var i = 0; i < curResourceGroup.Length; i++)
+        foreach (var group in groupDirectory.Subdirectories)
         {
-            if (!curResourceGroup[i].TryGetFileOffset(sections, out var fileOffset))
+            if (!TryGetGroupDataOffset(group, sections, out var fileOffset))
                 continue;
 
             var groupHeader = IcoHeaderReader.Read(stream, fileOffset);
@@ -181,11 +173,21 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
             decodedIcoResult.IcoGroups.Add(new CursorGroup
             {
-                Name = curResourceGroupDirectory.Subdirectories[i].Name,
+                Name = group.Name,
                 Header = groupHeader,
                 DirectoryEntries = [.. directoryEntries]
             });
         }
+    }
+
+    /// <summary>
+    /// A group directory holds one data entry per language, and the group is read from the first. A directory without
+    /// any holds no group.
+    /// </summary>
+    private static bool TryGetGroupDataOffset(ResourceDirectory group, IReadOnlyList<SectionHeader> sections, out uint fileOffset)
+    {
+        fileOffset = 0;
+        return group.DataEntries.Count > 0 && group.DataEntries[0].TryGetFileOffset(sections, out fileOffset);
     }
 
     public bool IsPeFormat(Stream stream) => _peDecoder.IsPeFormat(stream);

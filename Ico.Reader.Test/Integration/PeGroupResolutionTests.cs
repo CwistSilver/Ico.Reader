@@ -14,6 +14,7 @@ public sealed class PeGroupResolutionTests
     private const int ResourceIdField = 12;
     private const int BitmapInfoHeaderSize = 40;
     private const int CursorHotspotSize = 4;
+    private const int LanguageCountField = 14;
 
     private readonly IcoReader _reader = new();
 
@@ -108,6 +109,21 @@ public sealed class PeGroupResolutionTests
         var image = PngImage.Parse(ico.GetImage(group, 0));
 
         Assert.Equal(ico.GetImageReference(group, 0).Width, image.Width);
+    }
+
+    [Fact]
+    public void Read_KeepsEveryGroupNameWithItsGroupWhenAGroupHasNoLanguageEntry()
+    {
+        // A group whose directory lists no language holds no data and is dropped. The groups after it
+        // must still carry their own names rather than the name of the group before them.
+        var pe = PeFixtureBytes();
+        var emptyGroup = PeResources.Leaf(pe, ResourceType.RT_GROUP_ICON, 2);
+        PeResources.WriteUInt16(pe, emptyGroup.LanguageDirectoryOffset + LanguageCountField, 0);
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        Assert.Equal([("1", 1), ("3", 1), ("4", 3)], ico.IconGroups.Select(x => (x.Name, x.Size)));
     }
 
     [Fact]
