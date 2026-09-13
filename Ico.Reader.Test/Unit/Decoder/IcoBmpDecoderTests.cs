@@ -229,6 +229,52 @@ public sealed class IcoBmpDecoderTests
         Assert.Equal(64, AlphaAt(rgba, 2, 1, 1));
     }
 
+    /// <summary>
+    /// Windows treats an alpha channel that is zero throughout as absent and takes transparency from the AND mask, as
+    /// older tools wrote 32-bit images without filling in alpha.
+    /// </summary>
+    [Fact]
+    public void Bmp32_TakesTransparencyFromTheMaskWhenTheAlphaChannelIsEmpty()
+    {
+        var pixels = new (Rgb, byte)[,] { { (_red, 0), (_green, 0) }, { (_blue, 0), (_white, 0) } };
+        var transparent = new[,] { { false, true }, { false, false } };
+        var image = IcoBmpImage.TrueColor32(pixels, transparent: transparent);
+
+        var rgba = new IcoBmp32Decoder().DecodeIcoBmpToRgba(image, Header(2, 2, 32, 0));
+
+        Assert.Equal(_red, PixelAt(rgba, 2, 0, 0));
+        Assert.Equal(255, AlphaAt(rgba, 2, 0, 0));
+        Assert.Equal(_green, PixelAt(rgba, 2, 1, 0));
+        Assert.Equal(0, AlphaAt(rgba, 2, 1, 0));
+        Assert.Equal(255, AlphaAt(rgba, 2, 0, 1));
+        Assert.Equal(255, AlphaAt(rgba, 2, 1, 1));
+    }
+
+    [Fact]
+    public void Bmp32_DrawsEveryPixelWhenNeitherAlphaNorMaskHidesAny()
+    {
+        var pixels = new (Rgb, byte)[,] { { (_red, 0), (_green, 0) } };
+        var image = IcoBmpImage.TrueColor32(pixels);
+
+        var rgba = new IcoBmp32Decoder().DecodeIcoBmpToRgba(image, Header(2, 1, 32, 0));
+
+        Assert.Equal(255, AlphaAt(rgba, 2, 0, 0));
+        Assert.Equal(255, AlphaAt(rgba, 2, 1, 0));
+    }
+
+    [Fact]
+    public void Bmp32_IgnoresTheMaskOnceAnyPixelCarriesAlpha()
+    {
+        var pixels = new (Rgb, byte)[,] { { (_red, 1), (_green, 0) } };
+        var transparent = new[,] { { true, false } };
+        var image = IcoBmpImage.TrueColor32(pixels, transparent: transparent);
+
+        var rgba = new IcoBmp32Decoder().DecodeIcoBmpToRgba(image, Header(2, 1, 32, 0));
+
+        Assert.Equal(1, AlphaAt(rgba, 2, 0, 0));
+        Assert.Equal(0, AlphaAt(rgba, 2, 1, 0));
+    }
+
     [Fact]
     public void Bmp4_LocatesPixelDataAfterATruncatedPalette()
     {

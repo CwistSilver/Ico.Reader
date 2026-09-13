@@ -149,7 +149,8 @@ internal static class IcoBmpImage
 
     /// <param name="pixels">Colours addressed as [y, x] with alpha, row 0 at the top.</param>
     /// <param name="palette"><inheritdoc cref="TrueColor24" path="/param[@name='palette']"/></param>
-    public static byte[] TrueColor32((Rgb Color, byte Alpha)[,] pixels, Rgb[]? palette = null)
+    /// <param name="transparent">AND mask addressed as [y, x]; true hides the pixel.</param>
+    public static byte[] TrueColor32((Rgb Color, byte Alpha)[,] pixels, Rgb[]? palette = null, bool[,]? transparent = null)
     {
         var height = pixels.GetLength(0);
         var width = pixels.GetLength(1);
@@ -168,7 +169,7 @@ internal static class IcoBmpImage
             }
         }
 
-        return Compose(width, height, 32, palette?.Length ?? 0, palette ?? [], data, transparent: null);
+        return Compose(width, height, 32, palette?.Length ?? 0, palette ?? [], data, transparent);
     }
 
     private static byte[] Compose(int width, int height, int bitCount, int paletteLength, Rgb[] palette, byte[] pixels, bool[,]? transparent)
