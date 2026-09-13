@@ -24,6 +24,7 @@ public sealed class IcoBmp24Decoder : IIcoBmpDecoder
         var pixelStride = BmpLayout.Stride(width * 24);
         var maskStride = BmpLayout.MaskStride(width);
         var maskOffset = dataOffset + (pixelStride * height);
+        var hasMask = BmpLayout.HasMask(data, maskOffset, width, height);
 
         for (var y = 0; y < height; y++)
         {
@@ -42,7 +43,7 @@ public sealed class IcoBmp24Decoder : IIcoBmpDecoder
                 rgbaData[pixelIndex + 1] = data[source + 1];
                 rgbaData[pixelIndex + 2] = data[source];
 
-                if (!BmpLayout.IsTransparent(data, maskOffset, maskStride, y, x))
+                if (!hasMask || !BmpLayout.IsTransparent(data, maskOffset, maskStride, y, x))
                     rgbaData[pixelIndex + 3] = 255;
             }
         }

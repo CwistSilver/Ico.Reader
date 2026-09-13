@@ -17,20 +17,24 @@ internal static class BmpLayout
     public static int MaskStride(int width) => Stride(width);
 
     /// <summary>
-    /// Reads the AND mask bit for a pixel, where a set bit means the pixel is transparent.
+    /// Reports whether the data holds the whole AND mask.
     /// </summary>
     /// <remarks>
-    /// A truncated file can end before the mask does. Treating the missing part as transparent keeps
-    /// the image readable, and a fully transparent result is later made visible again by
-    /// <see cref="IndexedBmpDecoder"/>.
+    /// Some writers leave the mask out. Windows draws every pixel of such an image, and ignores a mask the data cuts
+    /// short in the same way, so a partial mask counts as none.
     /// </remarks>
+    public static bool HasMask(ReadOnlySpan<byte> data, int maskOffset, int width, int height)
+        => maskOffset + ((long)MaskStride(width) * height) <= data.Length;
+
+    /// <summary>
+    /// Reads the AND mask bit for a pixel, where a set bit means the pixel is transparent. Only valid once
+    /// <see cref="HasMask"/> has confirmed the data holds the mask.
+    /// </summary>
     public static bool IsTransparent(ReadOnlySpan<byte> data, int maskOffset, int maskStride, int row, int x)
     {
         var maskByteIndex = maskOffset + (row * maskStride) + (x / 8);
-        if (maskByteIndex >= data.Length)
-            return true;
-
         var maskBit = 7 - (x % 8);
+
         return ((data[maskByteIndex] >> maskBit) & 1) == 1;
     }
 }

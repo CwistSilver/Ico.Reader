@@ -303,6 +303,75 @@ public sealed class IcoBmpDecoderTests
         Assert.Equal(128, AlphaAt(rgba, 2, 1, 0));
     }
 
+    /// <summary>
+    /// Some writers leave the AND mask out, and Windows then draws every pixel of the image.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(8)]
+    public void Indexed_DrawsEveryPixelInItsOwnColourWithoutAMask(int bitCount)
+    {
+        Rgb[] palette = [_black, _green];
+        var indices = new byte[,] { { 1, 1 }, { 1, 1 } };
+        var image = WithoutMask(IcoBmpImage.Indexed(bitCount, palette, indices), width: 2, height: 2);
+
+        var rgba = Decoder(bitCount).DecodeIcoBmpToRgba(image, Header(2, 2, (ushort)bitCount, palette.Length));
+
+        Assert.All(new[] { (0, 0), (1, 0), (0, 1), (1, 1) }, point =>
+        {
+            Assert.Equal(_green, PixelAt(rgba, 2, point.Item1, point.Item2));
+            Assert.Equal(255, AlphaAt(rgba, 2, point.Item1, point.Item2));
+        });
+    }
+
+    [Fact]
+    public void Bmp24_DrawsEveryPixelWithoutAMask()
+    {
+        var pixels = new Rgb[,] { { _red, _green }, { _blue, _white } };
+        var image = WithoutMask(IcoBmpImage.TrueColor24(pixels), width: 2, height: 2);
+
+        var rgba = new IcoBmp24Decoder().DecodeIcoBmpToRgba(image, Header(2, 2, 24, 0));
+
+        Assert.All(new[] { (0, 0), (1, 0), (0, 1), (1, 1) }, point => Assert.Equal(255, AlphaAt(rgba, 2, point.Item1, point.Item2)));
+    }
+
+    /// <summary>
+    /// Windows ignores a mask the data cuts short, even where the rows it does hold would hide pixels.
+    /// </summary>
+    [Fact]
+    public void Bmp8_IgnoresAMaskTheDataCutsShort()
+    {
+        Rgb[] palette = [_black, _red];
+        var indices = new byte[,] { { 1, 1 }, { 1, 1 } };
+        var transparent = new[,] { { true, true }, { true, true } };
+        var image = IcoBmpImage.Indexed(8, palette, indices, transparent);
+        var cutShort = image.AsSpan(0, image.Length - 1).ToArray();
+
+        var rgba = new IcoBmp8Decoder().DecodeIcoBmpToRgba(cutShort, Header(2, 2, 8, palette.Length));
+
+        Assert.All(new[] { (0, 0), (1, 0), (0, 1), (1, 1) }, point =>
+        {
+            Assert.Equal(_red, PixelAt(rgba, 2, point.Item1, point.Item2));
+            Assert.Equal(255, AlphaAt(rgba, 2, point.Item1, point.Item2));
+        });
+    }
+
+    private static byte[] WithoutMask(byte[] image, int width, int height)
+    {
+        var maskSize = ((width + 31) / 32 * 4) * height;
+        return image.AsSpan(0, image.Length - maskSize).ToArray();
+    }
+
+    private static IIcoBmpDecoder Decoder(int bitCount) => bitCount switch
+    {
+        1 => new IcoBmp1Decoder(),
+        4 => new IcoBmp4Decoder(),
+        8 => new IcoBmp8Decoder(),
+        24 => new IcoBmp24Decoder(),
+        _ => new IcoBmp32Decoder()
+    };
+
     [Theory]
     [InlineData(1)]
     [InlineData(4)]
@@ -310,16 +379,5 @@ public sealed class IcoBmpDecoderTests
     [InlineData(24)]
     [InlineData(32)]
     public void BitCountSupported_MatchesTheDecoder(int bitCount)
-    {
-        IIcoBmpDecoder decoder = bitCount switch
-        {
-            1 => new IcoBmp1Decoder(),
-            4 => new IcoBmp4Decoder(),
-            8 => new IcoBmp8Decoder(),
-            24 => new IcoBmp24Decoder(),
-            _ => new IcoBmp32Decoder()
-        };
-
-        Assert.Equal(bitCount, decoder.BitCountSupported);
-    }
+        => Assert.Equal(bitCount, Decoder(bitCount).BitCountSupported);
 }

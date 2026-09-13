@@ -30,6 +30,7 @@ public abstract class IndexedBmpDecoder : IIcoBmpDecoder
         var pixelStride = BmpLayout.Stride(width * BitCountSupported);
         var maskStride = BmpLayout.MaskStride(width);
         var maskOffset = dataOffset + (pixelStride * height);
+        var hasMask = BmpLayout.HasMask(data, maskOffset, width, height);
 
         var allTransparent = true;
 
@@ -49,7 +50,7 @@ public abstract class IndexedBmpDecoder : IIcoBmpDecoder
                 rgbaData[pixelIndex + 1] = color.G;
                 rgbaData[pixelIndex + 2] = color.B;
 
-                if (BmpLayout.IsTransparent(data, maskOffset, maskStride, y, x))
+                if (hasMask && BmpLayout.IsTransparent(data, maskOffset, maskStride, y, x))
                     continue;
 
                 rgbaData[pixelIndex + 3] = 255;
