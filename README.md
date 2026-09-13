@@ -149,7 +149,7 @@ Each `ImageReference` exposes metadata about the individual image:
 | ---------- | ---------------- | ------------------------------------------ |
 | `Width`    | `int`            | Image width in pixels                      |
 | `Height`   | `int`            | Image height in pixels                     |
-| `BitCount` | `int`            | Bit depth (e.g. 1, 4, 8, 24, 32)           |
+| `BitCount` | `int`            | Bit depth (e.g. 1, 4, 8, 16, 24, 32)       |
 | `Format`   | `IcoImageFormat` | `Bmp` or `Png`                             |
 | `IcoType`  | `IcoType`        | `Icon` or `Cursor`                         |
 | `HotspotX` | `ushort`         | Cursor hotspot X coordinate (cursors only) |
