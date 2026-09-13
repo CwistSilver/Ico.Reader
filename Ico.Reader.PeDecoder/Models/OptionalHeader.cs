@@ -50,14 +50,14 @@ public sealed class OptionalHeader
     public uint BaseOfCode { get; init; }
 
     /// <summary>
-    /// Address of the first data section relative to the image base. Present on PE32 only.
+    /// Address of the first data section relative to the image base. Present on PE32 only, and 0 for PE32+.
     /// </summary>
     public uint BaseOfData { get; init; }
 
     /// <summary>
     /// Preferred address of the first byte of the image once loaded.
     /// </summary>
-    public uint ImageBase { get; init; }
+    public ulong ImageBase { get; init; }
 
     /// <summary>
     /// Alignment in bytes of sections once loaded.
@@ -132,22 +132,22 @@ public sealed class OptionalHeader
     /// <summary>
     /// Stack size to reserve.
     /// </summary>
-    public uint SizeOfStackReserve { get; init; }
+    public ulong SizeOfStackReserve { get; init; }
 
     /// <summary>
     /// Stack size to commit up front.
     /// </summary>
-    public uint SizeOfStackCommit { get; init; }
+    public ulong SizeOfStackCommit { get; init; }
 
     /// <summary>
     /// Local heap size to reserve.
     /// </summary>
-    public uint SizeOfHeapReserve { get; init; }
+    public ulong SizeOfHeapReserve { get; init; }
 
     /// <summary>
     /// Local heap size to commit up front.
     /// </summary>
-    public uint SizeOfHeapCommit { get; init; }
+    public ulong SizeOfHeapCommit { get; init; }
 
     /// <summary>
     /// Reserved and required to be zero.

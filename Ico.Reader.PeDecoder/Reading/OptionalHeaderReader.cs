@@ -24,21 +24,45 @@ internal static class OptionalHeaderReader
 
         return PooledStreamReader.Read(stream, sizeOfOptionalHeader, data =>
         {
-            var magic = (MagicNumber)MemoryMarshal.Read<ushort>(data.Slice(0, 2));
+            var magic = (MagicNumber)ReadUInt16(data, 0);
 
-            // PE32 carries an extra BaseOfData field, which shifts everything after it along.
-            var directoryBase = magic == MagicNumber.PE32 ? Pe32DataDirectoryOffset : Pe32PlusDataDirectoryOffset;
+            // PE32+ has no BaseOfData and widens ImageBase and the stack and heap sizes to 64 bits, which moves the
+            // fields after them. Offsets follow the PE format's Windows-specific fields table.
+            var isPe32 = magic == MagicNumber.PE32;
+            var directoryBase = isPe32 ? Pe32DataDirectoryOffset : Pe32PlusDataDirectoryOffset;
             var optionalHeader = new OptionalHeader
             {
                 Magic = magic,
                 MajorLinkerVersion = data[2],
                 MinorLinkerVersion = data[3],
-                SizeOfCode = MemoryMarshal.Read<uint>(data.Slice(4, 4)),
-                SizeOfInitializedData = MemoryMarshal.Read<uint>(data.Slice(8, 4)),
-                SizeOfUninitializedData = MemoryMarshal.Read<uint>(data.Slice(12, 4)),
-                AddressOfEntryPoint = MemoryMarshal.Read<uint>(data.Slice(16, 4)),
-                BaseOfCode = MemoryMarshal.Read<uint>(data.Slice(20, 4)),
-                BaseOfData = magic == MagicNumber.PE32Plus ? MemoryMarshal.Read<uint>(data.Slice(24, 4)) : 0,
+                SizeOfCode = ReadUInt32(data, 4),
+                SizeOfInitializedData = ReadUInt32(data, 8),
+                SizeOfUninitializedData = ReadUInt32(data, 12),
+                AddressOfEntryPoint = ReadUInt32(data, 16),
+                BaseOfCode = ReadUInt32(data, 20),
+                BaseOfData = isPe32 ? ReadUInt32(data, 24) : 0,
+
+                ImageBase = isPe32 ? ReadUInt32(data, 28) : ReadUInt64(data, 24),
+                SectionAlignment = ReadUInt32(data, 32),
+                FileAlignment = ReadUInt32(data, 36),
+                MajorOperatingSystemVersion = ReadUInt16(data, 40),
+                MinorOperatingSystemVersion = ReadUInt16(data, 42),
+                MajorImageVersion = ReadUInt16(data, 44),
+                MinorImageVersion = ReadUInt16(data, 46),
+                MajorSubsystemVersion = ReadUInt16(data, 48),
+                MinorSubsystemVersion = ReadUInt16(data, 50),
+                Win32VersionValue = ReadUInt32(data, 52),
+                SizeOfImage = ReadUInt32(data, 56),
+                SizeOfHeaders = ReadUInt32(data, 60),
+                CheckSum = ReadUInt32(data, 64),
+                Subsystem = ReadUInt16(data, 68),
+                DllCharacteristics = ReadUInt16(data, 70),
+                SizeOfStackReserve = isPe32 ? ReadUInt32(data, 72) : ReadUInt64(data, 72),
+                SizeOfStackCommit = isPe32 ? ReadUInt32(data, 76) : ReadUInt64(data, 80),
+                SizeOfHeapReserve = isPe32 ? ReadUInt32(data, 80) : ReadUInt64(data, 88),
+                SizeOfHeapCommit = isPe32 ? ReadUInt32(data, 84) : ReadUInt64(data, 96),
+                LoaderFlags = ReadUInt32(data, isPe32 ? 88 : 104),
+                NumberOfRvaAndSizes = ReadUInt32(data, isPe32 ? 92 : 108),
 
                 ExportTable = ReadDataDirectory(data, directoryBase + (0 * DataDirectorySize)),
                 ImportTable = ReadDataDirectory(data, directoryBase + (1 * DataDirectorySize)),
@@ -67,7 +91,13 @@ internal static class OptionalHeaderReader
 
     private static ImageDataDirectory ReadDataDirectory(ReadOnlySpan<byte> optionalHeaderSpan, int offset) => new()
     {
-        VirtualAddress = MemoryMarshal.Read<uint>(optionalHeaderSpan.Slice(offset, 4)),
-        Size = MemoryMarshal.Read<uint>(optionalHeaderSpan.Slice(offset + 4, 4))
+        VirtualAddress = ReadUInt32(optionalHeaderSpan, offset),
+        Size = ReadUInt32(optionalHeaderSpan, offset + 4)
     };
+
+    private static ushort ReadUInt16(ReadOnlySpan<byte> data, int offset) => MemoryMarshal.Read<ushort>(data.Slice(offset, 2));
+
+    private static uint ReadUInt32(ReadOnlySpan<byte> data, int offset) => MemoryMarshal.Read<uint>(data.Slice(offset, 4));
+
+    private static ulong ReadUInt64(ReadOnlySpan<byte> data, int offset) => MemoryMarshal.Read<ulong>(data.Slice(offset, 8));
 }
