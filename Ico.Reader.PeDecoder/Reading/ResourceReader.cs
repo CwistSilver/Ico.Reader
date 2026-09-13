@@ -18,13 +18,14 @@ internal static class ResourceReader
 
     public static ResourceDirectory? Read(Stream stream, PeHeader peHeader)
     {
-        if (peHeader.Optional is null || peHeader.Optional.ResourceTable is null)
+        var resourceTable = peHeader.Optional?.ResourceTable;
+        if (resourceTable is null || resourceTable.VirtualAddress == 0)
             return null;
 
         var sectionHeaders = SectionHeaderReader.Read(stream, peHeader);
 
-        var rsrcSection = peHeader.Optional.ResourceTable.FindFileSectionHeader(sectionHeaders);
-        long resourceTableOffset = rsrcSection.GetFileOffset(peHeader.Optional.ResourceTable.VirtualAddress);
+        var rsrcSection = resourceTable.FindFileSectionHeader(sectionHeaders);
+        long resourceTableOffset = rsrcSection.GetFileOffset(resourceTable.VirtualAddress);
 
         var rootResourceDirectory = ReadResourceDirectory(stream, resourceTableOffset, rsrcSection, [], 1);
 

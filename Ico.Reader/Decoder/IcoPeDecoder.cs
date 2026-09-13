@@ -25,14 +25,17 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             return null;
 
         var peHeader = _peDecoder.DecodePE(stream);
-        var readResourceDirectory = _peDecoder.DecodeResourceDirectory(stream, peHeader);
-        if (readResourceDirectory is null)
+        if (peHeader.Optional is null)
             return null;
 
         var decodedIcoResult = new DecodedIcoResult
         {
             OriginFileType = peHeader.Characteristics.HasFlag(Characteristics.ImageFileDLL) ? IcoOriginFileType.Dll : IcoOriginFileType.Executable
         };
+
+        var readResourceDirectory = _peDecoder.DecodeResourceDirectory(stream, peHeader);
+        if (readResourceDirectory is null)
+            return decodedIcoResult;
 
         // The section is resolved once here; every entry offset below is derived from it rather
         // than by re-reading the section table.
