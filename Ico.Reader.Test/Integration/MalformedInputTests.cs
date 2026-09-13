@@ -124,6 +124,63 @@ public sealed class MalformedInputTests
     }
 
     [Fact]
+    public void GetImage_ChecksTheDeclaredImageSizeBeforeAllocatingIt()
+    {
+        var ico = ValidIcon();
+        BitConverter.GetBytes(256u * 1024 * 1024).CopyTo(ico, FirstEntryImageSizeField);
+        var result = _reader.Read(ico);
+        Assert.NotNull(result);
+
+        var allocated = AllocatedBytes(() => Assert.Throws<EndOfStreamException>(() => result.GetImage(0)));
+
+        Assert.True(allocated < AllocationLimit, $"Allocated {allocated} bytes before failing.");
+    }
+
+    [Fact]
+    public void GetImage_ChecksTheBitmapDimensionsBeforeAllocatingPixels()
+    {
+        // A 56 byte bitmap claiming 8192x8192 pixels would need 256 MB of RGBA for pixels it cannot hold.
+        var image = new byte[56];
+        BitConverter.GetBytes(40).CopyTo(image, 0);
+        BitConverter.GetBytes(8192).CopyTo(image, 4);
+        BitConverter.GetBytes(8192 * 2).CopyTo(image, 8);
+        BitConverter.GetBytes((ushort)1).CopyTo(image, 12);
+        BitConverter.GetBytes((ushort)32).CopyTo(image, 14);
+        var result = _reader.Read(IcoBuilder.Icon().AddIcon(0, 0, 32, image).Build());
+        Assert.NotNull(result);
+
+        var allocated = AllocatedBytes(() => Assert.Throws<EndOfStreamException>(() => result.GetImage(0)));
+
+        Assert.True(allocated < AllocationLimit, $"Allocated {allocated} bytes before failing.");
+    }
+
+    [Theory]
+    [InlineData(0, 32)]
+    [InlineData(-16, 32)]
+    [InlineData(16, 0)]
+    [InlineData(16, -32)]
+    public void GetImage_RejectsBitmapDimensionsThatCannotBeDecoded(int width, int stackedHeight)
+    {
+        var image = IcoBmpImage.TrueColor32(new (Rgb Color, byte Alpha)[16, 16]);
+        BitConverter.GetBytes(width).CopyTo(image, 4);
+        BitConverter.GetBytes(stackedHeight).CopyTo(image, 8);
+        var result = _reader.Read(IcoBuilder.Icon().AddIcon(16, 16, 32, image).Build());
+        Assert.NotNull(result);
+
+        Assert.Throws<InvalidDataException>(() => result.GetImage(0));
+    }
+
+    private const int FirstEntryImageSizeField = 6 + 8;
+    private const long AllocationLimit = 16 * 1024 * 1024;
+
+    private static long AllocatedBytes(Action action)
+    {
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        action();
+        return GC.GetAllocatedBytesForCurrentThread() - before;
+    }
+
+    [Fact]
     public async Task GetImageAsync_ThrowsWhenTheImageDataIsTruncated()
     {
         var ico = ValidIcon();

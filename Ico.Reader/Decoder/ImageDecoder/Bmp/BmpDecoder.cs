@@ -10,6 +10,8 @@ namespace Ico.Reader.Decoder.ImageDecoder.Bmp;
 /// </summary>
 public sealed class BmpDecoder : IDecoder
 {
+    private const int InfoHeaderSize = 40;
+
     /// <summary>
     /// Specifies that this decoder supports the BMP image format.
     /// </summary>
@@ -45,6 +47,8 @@ public sealed class BmpDecoder : IDecoder
     /// <param name="data">The BMP image data to decode.</param>
     /// <returns>A byte array containing the decoded ARGB pixel data as png.</returns>
     /// <exception cref="NotSupportedException">Thrown if the bit depth of the BMP data is not supported.</exception>
+    /// <exception cref="InvalidDataException">Thrown if the header declares dimensions that cannot be decoded.</exception>
+    /// <exception cref="EndOfStreamException">Thrown if the data is too short for the pixels the header declares.</exception>
     public byte[] Decode(ReadOnlySpan<byte> data)
     {
         var header = ReadInfoHeader(data);
@@ -54,9 +58,33 @@ public sealed class BmpDecoder : IDecoder
         if (header.Compression != 0)
             throw new NotSupportedException("Compressed BMP images are not supported yet.");
 
+        EnsureDataHoldsThePixels(data, header);
+
         var argbData = decoder.DecodeIcoBmpToRgba(data, header);
 
         return _pngCreator.CreatePng(argbData, header);
+    }
+
+    /// <summary>
+    /// The dimensions come from the file, and every decoder allocates four bytes per declared pixel. They are checked
+    /// against the data first, so a few bytes claiming a huge image fail before anything that large is allocated. The
+    /// AND mask is not required, because Windows draws an image whose mask is missing.
+    /// </summary>
+    private static void EnsureDataHoldsThePixels(ReadOnlySpan<byte> data, BmpInfoHeader header)
+    {
+        var height = header.Height / 2;
+        if (header.Width <= 0 || height <= 0)
+            throw new InvalidDataException($"The bitmap declares {header.Width}x{height} pixels, which cannot be decoded.");
+
+        if (header.Size < InfoHeaderSize)
+            throw new InvalidDataException($"The bitmap header declares {header.Size} bytes, shorter than a BITMAPINFOHEADER.");
+
+        var stride = (((long)header.Width * header.BitCount) + 31) / 32 * 4;
+        var pixelDataOffset = header.Size + ((long)header.CalculatePaletteSize() * 4);
+        var required = pixelDataOffset + (stride * height);
+
+        if (required > data.Length)
+            throw new EndOfStreamException($"The bitmap needs {required} bytes for its header, palette and pixels, but holds {data.Length}.");
     }
 
     /// <summary>
@@ -81,7 +109,7 @@ public sealed class BmpDecoder : IDecoder
     /// </summary>
     /// <param name="data">The BMP image data to check.</param>
     /// <returns>True if the data is in a supported BMP format; otherwise, false.</returns>
-    public bool IsSupported(ReadOnlySpan<byte> data) => MemoryMarshal.Read<int>(data.Slice(0, 4)) == 40;
+    public bool IsSupported(ReadOnlySpan<byte> data) => MemoryMarshal.Read<int>(data.Slice(0, 4)) == InfoHeaderSize;
 
     private static BmpInfoHeader ReadInfoHeader(ReadOnlySpan<byte> src)
     {
