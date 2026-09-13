@@ -93,9 +93,27 @@ public sealed class SaveTests : IDisposable
 
         var files = Directory.GetFiles(Path.Combine(_outputDirectory, "icon_multi")).Select(Path.GetFileName).ToArray();
         Assert.Equal(3, files.Length);
-        Assert.Contains("0_icon_multi (16x16 32 bit).png", files);
-        Assert.Contains("1_icon_multi (32x32 32 bit).png", files);
-        Assert.Contains("2_icon_multi (48x48 32 bit).png", files);
+        Assert.Contains("0_icon_multi_Icon (16x16 32 bit).png", files);
+        Assert.Contains("1_icon_multi_Icon (32x32 32 bit).png", files);
+        Assert.Contains("2_icon_multi_Icon (48x48 32 bit).png", files);
+    }
+
+    [Fact]
+    public async Task SaveAllImagesToDirectory_KeepsAnIconAndACursorSharingAnIdApart()
+    {
+        // Resource ids are only unique within their type, so an icon and a cursor of the same size can
+        // share the id the file name starts with.
+        var pe = await AsyncFile.ReadAllBytesAsync(TestFiles.PeFixture, TestContext.Current.CancellationToken);
+        PeResources.NumberCursorsFromOne(pe);
+        var path = Path.Combine(_outputDirectory, "shared-ids.dll");
+        await AsyncFile.WriteAllBytesAsync(path, pe, TestContext.Current.CancellationToken);
+        var ico = _reader.Read(path);
+        Assert.NotNull(ico);
+        var exportDirectory = Path.Combine(_outputDirectory, "export");
+
+        await _exporter.SaveAllImagesToDirectoryAsync(ico, exportDirectory, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ico.ImageReferences.Count, Directory.GetFiles(Path.Combine(exportDirectory, "shared-ids")).Length);
     }
 
     [Fact]

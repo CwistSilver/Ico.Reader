@@ -133,25 +133,11 @@ public sealed class PeGroupResolutionTests
         // one counter, but the resource compiler behind tk86.dll numbers both from 1.
         var baseline = _reader.Read(PeFixtureBytes())!;
         var pe = PeFixtureBytes();
-        var newIds = PeResources.LeavesOf(pe, ResourceType.RT_CURSOR)
-            .OrderBy(x => x.Id)
-            .Select((leaf, index) => (leaf, NewId: (ushort)(index + 1)))
-            .ToArray();
-
-        foreach (var (leaf, newId) in newIds)
-            PeResources.WriteUInt32(pe, leaf.IdEntryOffset, newId);
-
-        var newIdFor = newIds.ToDictionary(x => (ushort)x.leaf.Id, x => x.NewId);
-        foreach (var group in PeResources.LeavesOf(pe, ResourceType.RT_GROUP_CURSOR))
-        {
-            var ids = PeResources.GroupResourceIds(pe, group);
-            for (var i = 0; i < ids.Count; i++)
-                PeResources.WriteUInt16(pe, PeResources.GroupEntryResourceIdOffset(pe, group, i), newIdFor[ids[i]]);
-        }
+        PeResources.NumberCursorsFromOne(pe);
 
         Assert.Subset(
             PeResources.LeavesOf(pe, ResourceType.RT_ICON).Select(x => x.Id).ToHashSet(),
-            newIds.Select(x => (uint)x.NewId).ToHashSet());
+            PeResources.LeavesOf(pe, ResourceType.RT_CURSOR).Select(x => x.Id).ToHashSet());
 
         var ico = _reader.Read(pe);
 

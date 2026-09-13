@@ -146,6 +146,26 @@ internal static class PeResources
         return [.. Enumerable.Range(0, entryCount).Select(i => BitConverter.ToUInt16(pe, GroupEntryResourceIdOffset(pe, group, i)))];
     }
 
+    /// <summary>
+    /// Renumbers the RT_CURSOR resources from 1, together with the group entries naming them, as resource compilers that
+    /// number each resource type on its own do. The cursors then share their ids with the fixture's icons.
+    /// </summary>
+    public static void NumberCursorsFromOne(byte[] pe)
+    {
+        var cursors = LeavesOf(pe, ResourceType.RT_CURSOR).OrderBy(leaf => leaf.Id).ToArray();
+        var newIdFor = cursors.Select((leaf, index) => (leaf.Id, NewId: (ushort)(index + 1))).ToDictionary(x => x.Id, x => x.NewId);
+        var groups = LeavesOf(pe, ResourceType.RT_GROUP_CURSOR).Select(group => (Group: group, Ids: GroupResourceIds(pe, group))).ToArray();
+
+        foreach (var cursor in cursors)
+            WriteUInt32(pe, cursor.IdEntryOffset, newIdFor[cursor.Id]);
+
+        foreach (var (group, ids) in groups)
+        {
+            for (var i = 0; i < ids.Count; i++)
+                WriteUInt16(pe, GroupEntryResourceIdOffset(pe, group, i), newIdFor[ids[i]]);
+        }
+    }
+
     public static void WriteUInt16(byte[] pe, int offset, ushort value) => BitConverter.GetBytes(value).CopyTo(pe, offset);
 
     public static void WriteUInt32(byte[] pe, int offset, uint value) => BitConverter.GetBytes(value).CopyTo(pe, offset);

@@ -69,9 +69,13 @@ public sealed class IcoExporter : IIcoExporter
         return Path.Combine(path, rootName);
     }
 
+    /// <summary>
+    /// An image id is only unique within its type, as an EXE or DLL numbers icons and cursors separately, so the type is
+    /// part of every file name.
+    /// </summary>
     private static string GetImageFilePath(IcoData icoData, ImageReference imageReference, string rootPath)
     {
-        var prefix = string.IsNullOrEmpty(icoData.Name) ? imageReference.IcoType.ToString() : icoData.Name;
+        var prefix = string.IsNullOrEmpty(icoData.Name) ? imageReference.IcoType.ToString() : $"{icoData.Name}_{imageReference.IcoType}";
         var fileName = $"{imageReference.Id}_{prefix} ({imageReference.Width}x{imageReference.Height} {imageReference.BitCount} bit).png";
 
         return Path.Combine(rootPath, fileName);
