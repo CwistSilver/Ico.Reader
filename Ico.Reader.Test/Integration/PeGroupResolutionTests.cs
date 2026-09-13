@@ -14,26 +14,54 @@ public sealed class PeGroupResolutionTests
     private const int GroupHeaderSize = 6;
     private const int GroupEntrySize = 14;
     private const int ResourceIdField = 12;
+    private const int BitmapInfoHeaderSize = 40;
+    private const int CursorHotspotSize = 4;
 
     private readonly IcoReader _reader = new();
 
     private static byte[] PeFixtureBytes() => File.ReadAllBytes(TestFiles.PeFixture);
 
-    /// <summary>Locates the RT_GROUP_ICON directory for the group with the given name.</summary>
-    private static int GroupIconDirectoryOffset(byte[] pe, string groupName)
+    /// <summary>Locates the group directory of the given type for the group with the given name.</summary>
+    private static int GroupDirectoryOffset(byte[] pe, ResourceType groupType, string groupName)
     {
         using var stream = new MemoryStream(pe);
         var peHeader = new PeFileDecoder().DecodePE(stream);
         var root = ResourceReader.Read(stream, peHeader)!;
 
-        var groupDirectory = root.GetDirectory(ResourceType.RT_GROUP_ICON.ToString())!;
+        var groupDirectory = root.GetDirectory(groupType.ToString())!;
         var index = groupDirectory.Subdirectories.FindIndex(x => x.Name == groupName);
 
-        return (int)root.GetResources(ResourceType.RT_GROUP_ICON.ToString())![index].GetFileOffset(root.Section!);
+        return (int)root.GetResources(groupType.ToString())![index].GetFileOffset(root.Section!);
     }
 
+    /// <summary>Locates the RT_ICON or RT_CURSOR resource with the given id.</summary>
+    private static int ImageResourceOffset(byte[] pe, ResourceType imageType, ushort resourceId)
+    {
+        using var stream = new MemoryStream(pe);
+        var peHeader = new PeFileDecoder().DecodePE(stream);
+        var root = ResourceReader.Read(stream, peHeader)!;
+
+        return (int)root.GetResources(imageType.ToString())!.Single(x => x.ID == resourceId).GetFileOffset(root.Section!);
+    }
+
+    private static int EntryOffset(int groupOffset, int entryIndex)
+        => groupOffset + GroupHeaderSize + (entryIndex * GroupEntrySize) + ResourceIdField;
+
+    private static ushort ResourceIdOfEntry(byte[] pe, int groupOffset, int entryIndex)
+        => BitConverter.ToUInt16(pe, EntryOffset(groupOffset, entryIndex));
+
     private static void PointEntryAtAMissingResource(byte[] pe, int groupOffset, int entryIndex, ushort absentResourceId)
-        => BitConverter.GetBytes(absentResourceId).CopyTo(pe, groupOffset + GroupHeaderSize + (entryIndex * GroupEntrySize) + ResourceIdField);
+        => BitConverter.GetBytes(absentResourceId).CopyTo(pe, EntryOffset(groupOffset, entryIndex));
+
+    /// <summary>
+    /// Clears the start of a bitmap image, so that neither the BMP nor the PNG decoder recognises it
+    /// and the image is read as a format no decoder supports.
+    /// </summary>
+    private static void MakeUnrecognisable(byte[] pe, int imageOffset)
+    {
+        Assert.Equal(BitmapInfoHeaderSize, BitConverter.ToInt32(pe, imageOffset));
+        Array.Clear(pe, imageOffset, 8);
+    }
 
     [Fact]
     public void Read_KeepsEveryEntryWhenAllResourcesArePresent()
@@ -49,7 +77,7 @@ public sealed class PeGroupResolutionTests
     public void Read_DropsASingleEntryWhoseResourceIsMissing()
     {
         var pe = PeFixtureBytes();
-        PointEntryAtAMissingResource(pe, GroupIconDirectoryOffset(pe, "2"), entryIndex: 0, absentResourceId: 9999);
+        PointEntryAtAMissingResource(pe, GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2"), entryIndex: 0, absentResourceId: 9999);
 
         var ico = _reader.Read(pe);
 
@@ -69,7 +97,7 @@ public sealed class PeGroupResolutionTests
         // Removing from a list while indexing forward skips whatever shifts into the vacated slot,
         // so the second missing entry used to survive with an unresolved offset.
         var pe = PeFixtureBytes();
-        var groupOffset = GroupIconDirectoryOffset(pe, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 0, absentResourceId: 9999);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 1, absentResourceId: 9998);
 
@@ -86,7 +114,7 @@ public sealed class PeGroupResolutionTests
     public void Read_KeepsTheSurvivingEntryUsable()
     {
         var pe = PeFixtureBytes();
-        var groupOffset = GroupIconDirectoryOffset(pe, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 0, absentResourceId: 9999);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 1, absentResourceId: 9998);
 
@@ -97,5 +125,53 @@ public sealed class PeGroupResolutionTests
         var image = PngImage.Parse(ico.GetImage(group, 0));
 
         Assert.Equal(ico.GetImageReference(group, 0).Width, image.Width);
+    }
+
+    [Fact]
+    public void Read_KeepsEveryOtherIconWhenOneIsInAnUnrecognisedFormat()
+    {
+        // An image no decoder recognises is skipped. It used to end the image loop, which also
+        // skipped building every icon group.
+        var baseline = _reader.Read(PeFixtureBytes())!;
+        var pe = PeFixtureBytes();
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
+        MakeUnrecognisable(pe, ImageResourceOffset(pe, ResourceType.RT_ICON, ResourceIdOfEntry(pe, groupOffset, entryIndex: 1)));
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        Assert.Equal(baseline.ImageReferences.Count - 1, ico.ImageReferences.Count);
+        Assert.Equal(baseline.IconGroups.Select(x => x.Name), ico.IconGroups.Select(x => x.Name));
+        Assert.Equal(baseline.CursorGroups.Select(x => x.Name), ico.CursorGroups.Select(x => x.Name));
+
+        var expected = baseline.GetIconGroup("2");
+        var group = ico.GetIconGroup("2");
+        Assert.Equal(
+            new[] { 0, 2 }.Select(i => baseline.GetImageReference(expected, i).Width),
+            Enumerable.Range(0, group.Size).Select(i => PngImage.Parse(ico.GetImage(group, i)).Width));
+    }
+
+    [Fact]
+    public void Read_KeepsEveryOtherCursorWhenOneIsInAnUnrecognisedFormat()
+    {
+        var baseline = _reader.Read(PeFixtureBytes())!;
+        var pe = PeFixtureBytes();
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_CURSOR, "2");
+        var resourceOffset = ImageResourceOffset(pe, ResourceType.RT_CURSOR, ResourceIdOfEntry(pe, groupOffset, entryIndex: 1));
+
+        // An RT_CURSOR resource carries its hotspot ahead of the image.
+        MakeUnrecognisable(pe, resourceOffset + CursorHotspotSize);
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        Assert.Equal(baseline.ImageReferences.Count - 1, ico.ImageReferences.Count);
+        Assert.Equal(baseline.CursorGroups.Select(x => x.Name), ico.CursorGroups.Select(x => x.Name));
+        Assert.Equal(baseline.IconGroups.Select(x => x.Name), ico.IconGroups.Select(x => x.Name));
+
+        var expected = baseline.GetCursorGroup("2").DirectoryEntries!;
+        Assert.Equal(
+            new[] { expected[0], expected[2] }.Select(x => (x.Width, x.HotspotX, x.HotspotY)),
+            ico.GetCursorGroup("2").DirectoryEntries!.Select(x => (x.Width, x.HotspotX, x.HotspotY)));
     }
 }

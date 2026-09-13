@@ -59,7 +59,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             var fileOffset = icoDataEntry.GetFileOffset(resourceSection);
             var reference = ImageReferenceReader.FromStream(stream, fileOffset, icoDataEntry.Size, icoDecoder);
             if (reference is null)
-                return;
+                continue;
 
             decodedIcoResult.References.Add(reference with { Id = (int)icoDataEntry.ID });
         }
@@ -132,7 +132,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
             var reference = ImageReferenceReader.FromStream(stream, imageReferenceOffset, curDataEntry.Size, icoDecoder);
             if (reference is null)
-                return;
+                continue;
 
             decodedIcoResult.References.Add(reference with { Id = (int)curDataEntry.ID, IcoType = IcoType.Cursor, HotspotX = hotspotX, HotspotY = hotspotY });
         }
