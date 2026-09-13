@@ -28,7 +28,7 @@ public sealed class ServiceCollectionExtensionsTests
 
         var decoders = provider.GetServices<IIcoBmpDecoder>().ToArray();
 
-        Assert.Equal([1, 4, 8, 24, 32], decoders.Select(x => (int)x.BitCountSupported).OrderBy(x => x));
+        Assert.Equal([1, 4, 8, 16, 24, 32], decoders.Select(x => (int)x.BitCountSupported).OrderBy(x => x));
     }
 
     [Fact]

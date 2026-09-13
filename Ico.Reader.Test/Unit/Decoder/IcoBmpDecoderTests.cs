@@ -403,6 +403,70 @@ public sealed class IcoBmpDecoderTests
         });
     }
 
+    private static ushort Pack(int red, int green, int blue) => (ushort)((red << 10) | (green << 5) | blue);
+
+    /// <summary>
+    /// The pairs are what Windows draws for each 5-bit channel value.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 8)]
+    [InlineData(2, 16)]
+    [InlineData(6, 49)]
+    [InlineData(12, 99)]
+    [InlineData(15, 123)]
+    [InlineData(16, 132)]
+    [InlineData(19, 156)]
+    [InlineData(25, 206)]
+    [InlineData(29, 239)]
+    [InlineData(30, 247)]
+    [InlineData(31, 255)]
+    public void Bmp16_ExpandsEveryChannelTheWayWindowsDraws(int fiveBit, int eightBit)
+    {
+        var pixels = new ushort[,] { { Pack(fiveBit, 0, 0), Pack(0, fiveBit, 0), Pack(0, 0, fiveBit) } };
+        var image = IcoBmpImage.HighColor16(pixels);
+
+        var rgba = new IcoBmp16Decoder().DecodeIcoBmpToRgba(image, Header(3, 1, 16, 0));
+
+        Assert.Equal(new Rgb((byte)eightBit, 0, 0), PixelAt(rgba, 3, 0, 0));
+        Assert.Equal(new Rgb(0, (byte)eightBit, 0), PixelAt(rgba, 3, 1, 0));
+        Assert.Equal(new Rgb(0, 0, (byte)eightBit), PixelAt(rgba, 3, 2, 0));
+    }
+
+    [Fact]
+    public void Bmp16_KeepsRowOrderAcrossPaddedRows()
+    {
+        // Three pixels are six bytes per row, padded to eight.
+        var pixels = new ushort[,]
+        {
+            { Pack(31, 0, 0), Pack(0, 31, 0), Pack(0, 0, 31) },
+            { Pack(0, 0, 31), Pack(31, 31, 31), Pack(31, 0, 0) }
+        };
+        var image = IcoBmpImage.HighColor16(pixels);
+
+        var rgba = new IcoBmp16Decoder().DecodeIcoBmpToRgba(image, Header(3, 2, 16, 0));
+
+        Assert.Equal(_red, PixelAt(rgba, 3, 0, 0));
+        Assert.Equal(_green, PixelAt(rgba, 3, 1, 0));
+        Assert.Equal(_blue, PixelAt(rgba, 3, 2, 0));
+        Assert.Equal(_blue, PixelAt(rgba, 3, 0, 1));
+        Assert.Equal(_white, PixelAt(rgba, 3, 1, 1));
+        Assert.Equal(_red, PixelAt(rgba, 3, 2, 1));
+    }
+
+    [Fact]
+    public void Bmp16_HonoursTheAndMask()
+    {
+        var pixels = new ushort[,] { { Pack(31, 0, 0), Pack(31, 0, 0) } };
+        var transparent = new[,] { { false, true } };
+        var image = IcoBmpImage.HighColor16(pixels, transparent);
+
+        var rgba = new IcoBmp16Decoder().DecodeIcoBmpToRgba(image, Header(2, 1, 16, 0));
+
+        Assert.Equal(255, AlphaAt(rgba, 2, 0, 0));
+        Assert.Equal(0, AlphaAt(rgba, 2, 1, 0));
+    }
+
     private static byte[] WithoutMask(byte[] image, int width, int height)
     {
         var maskSize = ((width + 31) / 32 * 4) * height;
@@ -414,6 +478,7 @@ public sealed class IcoBmpDecoderTests
         1 => new IcoBmp1Decoder(),
         4 => new IcoBmp4Decoder(),
         8 => new IcoBmp8Decoder(),
+        16 => new IcoBmp16Decoder(),
         24 => new IcoBmp24Decoder(),
         _ => new IcoBmp32Decoder()
     };
@@ -422,6 +487,7 @@ public sealed class IcoBmpDecoderTests
     [InlineData(1)]
     [InlineData(4)]
     [InlineData(8)]
+    [InlineData(16)]
     [InlineData(24)]
     [InlineData(32)]
     public void BitCountSupported_MatchesTheDecoder(int bitCount)

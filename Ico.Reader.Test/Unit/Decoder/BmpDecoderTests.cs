@@ -53,13 +53,24 @@ public sealed class BmpDecoderTests
     }
 
     [Fact]
+    public void Decode_ProducesAPngForA16BitImage()
+    {
+        var image = IcoBmpImage.HighColor16(new ushort[2, 3]);
+
+        var png = PngImage.Parse(_decoder.Decode(image));
+
+        Assert.Equal(3, png.Width);
+        Assert.Equal(2, png.Height);
+    }
+
+    [Fact]
     public void Decode_ThrowsForAnUnsupportedBitDepth()
     {
         var image = IcoBmpImage.Indexed(8, _palette, new byte[2, 2]);
-        BitConverter.GetBytes((ushort)16).CopyTo(image, 14);
+        BitConverter.GetBytes((ushort)2).CopyTo(image, 14);
 
         var exception = Assert.Throws<NotSupportedException>(() => _decoder.Decode(image));
-        Assert.Contains("16", exception.Message);
+        Assert.Contains("2", exception.Message);
     }
 
     [Fact]

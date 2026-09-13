@@ -19,6 +19,7 @@ internal static class IcoReaderDefaults
         new IcoBmp1Decoder(),
         new IcoBmp4Decoder(),
         new IcoBmp8Decoder(),
+        new IcoBmp16Decoder(),
         new IcoBmp24Decoder(),
         new IcoBmp32Decoder()
     ];

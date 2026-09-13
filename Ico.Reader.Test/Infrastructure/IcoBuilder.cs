@@ -147,6 +147,25 @@ internal static class IcoBmpImage
         return Compose(width, height, 24, palette?.Length ?? 0, palette ?? [], data, transparent);
     }
 
+    /// <param name="pixels">Colours packed as 5-5-5 bits and addressed as [y, x], with row 0 at the top.</param>
+    /// <param name="transparent">AND mask addressed as [y, x]; true hides the pixel.</param>
+    public static byte[] HighColor16(ushort[,] pixels, bool[,]? transparent = null)
+    {
+        var height = pixels.GetLength(0);
+        var width = pixels.GetLength(1);
+        var stride = Stride(width * 16);
+
+        var data = new byte[stride * height];
+        for (var y = 0; y < height; y++)
+        {
+            var row = (height - 1 - y) * stride;
+            for (var x = 0; x < width; x++)
+                BitConverter.GetBytes(pixels[y, x]).CopyTo(data, row + (x * 2));
+        }
+
+        return Compose(width, height, 16, 0, [], data, transparent);
+    }
+
     /// <param name="pixels">Colours addressed as [y, x] with alpha, row 0 at the top.</param>
     /// <param name="palette"><inheritdoc cref="TrueColor24" path="/param[@name='palette']"/></param>
     /// <param name="transparent">AND mask addressed as [y, x]; true hides the pixel.</param>
