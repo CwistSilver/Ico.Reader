@@ -121,7 +121,7 @@ To iterate over all groups and retrieve all images asynchronously:
 var imageDatas = new List<byte[]>();
 foreach (var group in icoData.Groups)
 {
-    for (int i = 0; i < group.DirectoryEntries.Length; i++)
+    for (int i = 0; i < group.DirectoryEntries.Count; i++)
     {
         byte[] imageData = await icoData.GetImageAsync(group, i);
         imageDatas.Add(imageData);

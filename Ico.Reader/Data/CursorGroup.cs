@@ -19,16 +19,22 @@ public sealed class CursorGroup : IIcoGroup<CursorDirectoryEntry>, IIcoGroup
     /// <summary> <inheritdoc/> </summary>
     public required IcoHeader Header { get; init; }
 
+    private readonly IReadOnlyList<CursorDirectoryEntry> _directoryEntries = [];
+
     /// <summary>
-    /// An array of <see cref="CursorDirectoryEntry"/> objects, each representing a cursor within the group.
-    /// This array contains metadata about individual cursors.
+    /// The <see cref="CursorDirectoryEntry"/> of each cursor within the group. The group keeps its own copy of the
+    /// entries it is created with.
     /// </summary>
-    public required CursorDirectoryEntry[] DirectoryEntries { get; init; }
+    public required IReadOnlyList<CursorDirectoryEntry> DirectoryEntries
+    {
+        get => _directoryEntries;
+        init => _directoryEntries = Array.AsReadOnly(value.ToArray());
+    }
 
     /// <summary> <inheritdoc/> </summary>
-    public int Size => DirectoryEntries.Length;
+    public int Size => DirectoryEntries.Count;
 
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
+    IReadOnlyList<IIcoDirectoryEntry> IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
 
     /// <inheritdoc/>
     public override string ToString() => $"[{nameof(CursorGroup)}] {Name} ({Size})";

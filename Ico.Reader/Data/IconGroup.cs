@@ -19,16 +19,22 @@ public sealed class IconGroup : IIcoGroup<IconDirectoryEntry>, IIcoGroup
     /// <summary> <inheritdoc/> </summary>
     public required IcoHeader Header { get; init; }
 
+    private readonly IReadOnlyList<IconDirectoryEntry> _directoryEntries = [];
+
     /// <summary>
-    /// An array of <see cref="IconDirectoryEntry"/> objects, each representing an icon within the group.
-    /// This array contains metadata about individual icons.
+    /// The <see cref="IconDirectoryEntry"/> of each icon within the group. The group keeps its own copy of the entries
+    /// it is created with.
     /// </summary>
-    public required IconDirectoryEntry[] DirectoryEntries { get; init; }
+    public required IReadOnlyList<IconDirectoryEntry> DirectoryEntries
+    {
+        get => _directoryEntries;
+        init => _directoryEntries = Array.AsReadOnly(value.ToArray());
+    }
 
     /// <summary> <inheritdoc/> </summary>
-    public int Size => DirectoryEntries.Length;
+    public int Size => DirectoryEntries.Count;
 
-    IIcoDirectoryEntry[] IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
+    IReadOnlyList<IIcoDirectoryEntry> IIcoGroup<IIcoDirectoryEntry>.DirectoryEntries => DirectoryEntries;
 
     /// <inheritdoc/>
     public override string ToString() => $"[{nameof(IconGroup)}] {Name} ({Size})";

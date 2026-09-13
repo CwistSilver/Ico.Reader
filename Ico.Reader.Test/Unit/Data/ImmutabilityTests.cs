@@ -40,6 +40,29 @@ public sealed class ImmutabilityTests
     }
 
     [Fact]
+    public void GroupEntries_CannotBeReplacedThroughTheGroup()
+    {
+        // IcoData resolves images through the entries of the group a caller passes back, so replacing
+        // one would change what later lookups return.
+        var ico = new IcoReader().Read(TestFiles.Ico("icon_multi.ico"));
+        Assert.NotNull(ico);
+        var entries = Assert.IsAssignableFrom<IList<IconDirectoryEntry>>(ico.IconGroups[0].DirectoryEntries);
+
+        Assert.Throws<NotSupportedException>(() => entries[0] = entries[1]);
+    }
+
+    [Fact]
+    public void GroupEntries_AreCopiedWhenTheGroupIsCreated()
+    {
+        var source = new[] { new IconDirectoryEntry { Width = 16 }, new IconDirectoryEntry { Width = 32 } };
+        var group = new IconGroup { Name = "1", Header = new IcoHeader(), DirectoryEntries = source };
+
+        source[0] = new IconDirectoryEntry { Width = 48 };
+
+        Assert.Equal(16, group.DirectoryEntries[0].Width);
+    }
+
+    [Fact]
     public void ImageReference_CopiesCarryEveryOtherValueOver()
     {
         var reader = new IcoReader();

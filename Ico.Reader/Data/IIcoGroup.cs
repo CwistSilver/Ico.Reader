@@ -32,13 +32,12 @@ public interface IIcoGroup<T> where T : IIcoDirectoryEntry
     int Size { get; }
 
     /// <summary>
-    /// An array of directory entries, each representing an ico or cursor within the group.
-    /// This array contains metadata about individual icons or cursors.
+    /// The directory entries of the group, each describing one icon or cursor image within it.
     /// <para>
     /// Each entry is either of type <see cref="IconDirectoryEntry"/> for ICO files
     /// or <see cref="CursorDirectoryEntry"/> for CUR files.
     /// </para>
     /// </summary>
-    T[] DirectoryEntries { get; }
+    IReadOnlyList<T> DirectoryEntries { get; }
 }
 
