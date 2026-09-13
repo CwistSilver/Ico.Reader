@@ -1,8 +1,4 @@
-﻿using Ico.Reader.PeDecoder;
-using Ico.Reader.PeDecoder.Models;
-using Ico.Reader.PeDecoder.Reading;
-
-namespace Ico.Reader.Test.Integration;
+﻿namespace Ico.Reader.Test.Integration;
 
 /// <summary>
 /// Every length and offset in a PE file is attacker controlled. These cases feed the decoder headers
@@ -58,16 +54,16 @@ public sealed class MalformedPeTests
     [Fact]
     public void Read_SurvivesACyclicResourceTree()
     {
-        // Subdirectory offsets are relative to the start of the resource section. Root entry 0 points
-        // at a resource-type directory; making that directory's own first entry point back at itself
-        // turns the tree into a loop, which without a cycle guard recurses until the stack gives out.
+        // Subdirectory offsets count from the root of the resource tree. Root entry 0 points at a
+        // resource-type directory; making that directory's own first entry point back at itself turns
+        // the tree into a loop, which without a cycle guard recurses until the stack gives out.
         var pe = PeFixtureBytes();
-        var sectionStart = ResourceSectionStart(pe);
+        var root = PeResources.RootOffset(pe);
 
-        var typeDirectoryOffset = BitConverter.ToUInt32(pe, sectionStart + DirectoryHeaderSize + SubdirectoryOffsetField) & 0x7FFFFFFF;
+        var typeDirectoryOffset = BitConverter.ToUInt32(pe, root + DirectoryHeaderSize + SubdirectoryOffsetField) & 0x7FFFFFFF;
         Assert.NotEqual(0u, typeDirectoryOffset);
 
-        var selfReference = sectionStart + (int)typeDirectoryOffset + DirectoryHeaderSize + SubdirectoryOffsetField;
+        var selfReference = root + (int)typeDirectoryOffset + DirectoryHeaderSize + SubdirectoryOffsetField;
         BitConverter.GetBytes(0x80000000u | typeDirectoryOffset).CopyTo(pe, selfReference);
 
         var exception = Record.Exception(() => _reader.Read(pe));
@@ -78,16 +74,6 @@ public sealed class MalformedPeTests
 
     private const int DirectoryHeaderSize = 16;
     private const int SubdirectoryOffsetField = 4;
-
-    private static int ResourceSectionStart(byte[] pe)
-    {
-        using var stream = new MemoryStream(pe);
-        var peHeader = new PeFileDecoder().DecodePE(stream);
-        var sections = SectionHeaderReader.Read(stream, peHeader);
-        var resourceTable = peHeader.Optional!.ResourceTable!;
-
-        return (int)resourceTable.FindFileSectionHeader(sections).PointerToRawData;
-    }
 
     [Fact]
     public void Read_StillReadsTheUntouchedFixture()

@@ -1,6 +1,4 @@
-﻿using Ico.Reader.PeDecoder;
-using Ico.Reader.PeDecoder.Models;
-using Ico.Reader.PeDecoder.Reading;
+﻿using Ico.Reader.PeDecoder.Models;
 
 namespace Ico.Reader.Test.Integration;
 
@@ -21,28 +19,13 @@ public sealed class PeGroupResolutionTests
 
     private static byte[] PeFixtureBytes() => File.ReadAllBytes(TestFiles.PeFixture);
 
-    /// <summary>Locates the group directory of the given type for the group with the given name.</summary>
-    private static int GroupDirectoryOffset(byte[] pe, ResourceType groupType, string groupName)
-    {
-        using var stream = new MemoryStream(pe);
-        var peHeader = new PeFileDecoder().DecodePE(stream);
-        var root = ResourceReader.Read(stream, peHeader)!;
-
-        var groupDirectory = root.GetDirectory(groupType.ToString())!;
-        var index = groupDirectory.Subdirectories.FindIndex(x => x.Name == groupName);
-
-        return (int)root.GetResources(groupType.ToString())![index].GetFileOffset(root.Section!);
-    }
+    /// <summary>Locates the group directory of the given type for the group with the given id.</summary>
+    private static int GroupDirectoryOffset(byte[] pe, ResourceType groupType, uint groupId)
+        => PeResources.DataOffset(pe, PeResources.Leaf(pe, groupType, groupId));
 
     /// <summary>Locates the RT_ICON or RT_CURSOR resource with the given id.</summary>
     private static int ImageResourceOffset(byte[] pe, ResourceType imageType, ushort resourceId)
-    {
-        using var stream = new MemoryStream(pe);
-        var peHeader = new PeFileDecoder().DecodePE(stream);
-        var root = ResourceReader.Read(stream, peHeader)!;
-
-        return (int)root.GetResources(imageType.ToString())!.Single(x => x.ID == resourceId).GetFileOffset(root.Section!);
-    }
+        => PeResources.DataOffset(pe, PeResources.Leaf(pe, imageType, resourceId));
 
     private static int EntryOffset(int groupOffset, int entryIndex)
         => groupOffset + GroupHeaderSize + (entryIndex * GroupEntrySize) + ResourceIdField;
@@ -77,7 +60,7 @@ public sealed class PeGroupResolutionTests
     public void Read_DropsASingleEntryWhoseResourceIsMissing()
     {
         var pe = PeFixtureBytes();
-        PointEntryAtAMissingResource(pe, GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2"), entryIndex: 0, absentResourceId: 9999);
+        PointEntryAtAMissingResource(pe, GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, 2), entryIndex: 0, absentResourceId: 9999);
 
         var ico = _reader.Read(pe);
 
@@ -97,7 +80,7 @@ public sealed class PeGroupResolutionTests
         // Removing from a list while indexing forward skips whatever shifts into the vacated slot,
         // so the second missing entry used to survive with an unresolved offset.
         var pe = PeFixtureBytes();
-        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, 2);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 0, absentResourceId: 9999);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 1, absentResourceId: 9998);
 
@@ -114,7 +97,7 @@ public sealed class PeGroupResolutionTests
     public void Read_KeepsTheSurvivingEntryUsable()
     {
         var pe = PeFixtureBytes();
-        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, 2);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 0, absentResourceId: 9999);
         PointEntryAtAMissingResource(pe, groupOffset, entryIndex: 1, absentResourceId: 9998);
 
@@ -134,7 +117,7 @@ public sealed class PeGroupResolutionTests
         // skipped building every icon group.
         var baseline = _reader.Read(PeFixtureBytes())!;
         var pe = PeFixtureBytes();
-        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_ICON, 2);
         MakeUnrecognisable(pe, ImageResourceOffset(pe, ResourceType.RT_ICON, ResourceIdOfEntry(pe, groupOffset, entryIndex: 1)));
 
         var ico = _reader.Read(pe);
@@ -156,7 +139,7 @@ public sealed class PeGroupResolutionTests
     {
         var baseline = _reader.Read(PeFixtureBytes())!;
         var pe = PeFixtureBytes();
-        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_CURSOR, "2");
+        var groupOffset = GroupDirectoryOffset(pe, ResourceType.RT_GROUP_CURSOR, 2);
         var resourceOffset = ImageResourceOffset(pe, ResourceType.RT_CURSOR, ResourceIdOfEntry(pe, groupOffset, entryIndex: 1));
 
         // An RT_CURSOR resource carries its hotspot ahead of the image.
