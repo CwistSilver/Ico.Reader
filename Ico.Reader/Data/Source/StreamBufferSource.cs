@@ -1,4 +1,4 @@
-﻿namespace Ico.Reader.Data.Source;
+namespace Ico.Reader.Data.Source;
 
 /// <summary>
 /// An <see cref="IDataSource"/> that copies a stream up front, so images stay readable after the
@@ -10,9 +10,12 @@ public sealed class StreamBufferSource : IDataSource
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StreamBufferSource"/> class, copying the stream
-    /// into memory and restoring its original position.
+    /// into memory from its current position to its end.
     /// </summary>
-    /// <param name="sourceStream">The stream to copy. It is left open and repositioned where it started.</param>
+    /// <param name="sourceStream">
+    /// The stream to copy, positioned where the data starts. It need not be seekable. It is left open, and a seekable
+    /// stream is repositioned where it started.
+    /// </param>
     /// <exception cref="ArgumentNullException">The stream is null.</exception>
     /// <exception cref="ArgumentException">The stream is not readable.</exception>
     public StreamBufferSource(Stream sourceStream)
@@ -23,16 +26,16 @@ public sealed class StreamBufferSource : IDataSource
         if (!sourceStream.CanRead)
             throw new ArgumentException("The source stream must be readable.", nameof(sourceStream));
 
-        var startPosition = sourceStream.Position;
+        var startPosition = sourceStream.CanSeek ? sourceStream.Position : 0;
 
         using var ms = new MemoryStream();
         sourceStream.CopyTo(ms);
         _buffer = ms.ToArray();
 
-        sourceStream.Position = startPosition;
+        if (sourceStream.CanSeek)
+            sourceStream.Position = startPosition;
     }
 
     /// <inheritdoc/>
     public Stream GetStream(bool useAsync = false) => new MemoryStream(_buffer, writable: false);
 }
-

@@ -136,6 +136,43 @@ public sealed class DataSourceTests
     }
 
     [Fact]
+    public void StreamBufferSource_CopiesFromTheCurrentPosition()
+    {
+        using var origin = new MemoryStream(Payload) { Position = 2 };
+
+        var source = new StreamBufferSource(origin);
+
+        using var stream = source.GetStream();
+        Assert.Equal([3, 4, 5], Drain(stream));
+    }
+
+    [Fact]
+    public void StreamBufferSource_CopiesAStreamThatCannotSeek()
+    {
+        using var origin = new UnseekableStream(Payload);
+
+        var source = new StreamBufferSource(origin);
+
+        using var stream = source.GetStream();
+        Assert.Equal(Payload, Drain(stream));
+    }
+
+    [Fact]
+    public void StreamSource_CountsPositionsFromWhereTheStreamWasHandedOver()
+    {
+        using var origin = new MemoryStream(Payload) { Position = 2 };
+        var source = new StreamSource(origin);
+        origin.Position = 4;
+
+        using var stream = source.GetStream();
+        stream.Position = 0;
+
+        Assert.Equal(3, stream.Length);
+        Assert.Equal(2, origin.Position);
+        Assert.Equal([3, 4, 5], Drain(stream));
+    }
+
+    [Fact]
     public void StreamBufferSource_RejectsNull()
         => Assert.Throws<ArgumentNullException>(() => new StreamBufferSource(null!));
 
@@ -211,5 +248,11 @@ public sealed class DataSourceTests
     private sealed class UnseekableStream(byte[] data) : MemoryStream(data)
     {
         public override bool CanSeek => false;
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
     }
 }

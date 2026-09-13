@@ -81,9 +81,9 @@ public sealed class IcoReader
     }
 
     /// <summary>
-    /// Reads ico data from a stream, copying it asynchronously.
+    /// Reads ico data from a stream, copying it asynchronously from its current position to its end.
     /// </summary>
-    /// <param name="stream">The stream containing the ico data.</param>
+    /// <param name="stream">The stream containing the ico data, positioned where the data starts. It need not be seekable.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
     public async Task<IcoData?> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
@@ -120,21 +120,23 @@ public sealed class IcoReader
     }
 
     /// <summary>
-    /// Reads ico data from a stream.
+    /// Reads ico data from a stream, starting at its current position.
     /// </summary>
-    /// <param name="stream">The stream containing the ico data.</param>
-    /// <param name="copyStream">If true, a copy of the stream will be created; otherwise, the original stream will be used.</param>
+    /// <param name="stream">The stream containing the ico data, positioned where the data starts.</param>
+    /// <param name="copyStream">
+    /// If true, the stream is copied from its current position to its end, so it need not be seekable and can be closed
+    /// once this returns. If false, the stream is read in place: it has to be seekable and stay open while images are
+    /// read, and reading them moves its position.
+    /// </param>
     /// <returns>An IcoData object containing the read ico data, or null if the data cannot be read.</returns>
     /// <exception cref="ArgumentNullException">Thrown if the provided stream is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if the stream is not readable, or not seekable while <paramref name="copyStream"/> is false.</exception>
     public IcoData? Read(Stream stream, bool copyStream = true)
     {
-        IDataSource dataSource;
-        if (copyStream)
-            dataSource = new StreamBufferSource(stream);
-        else
-            dataSource = new StreamSource(stream);
+        IDataSource dataSource = copyStream ? new StreamBufferSource(stream) : new StreamSource(stream);
 
-        return ReadFromStream(stream, dataSource);
+        using var readStream = dataSource.GetStream();
+        return ReadFromStream(readStream, dataSource);
     }
 
     /// <summary>

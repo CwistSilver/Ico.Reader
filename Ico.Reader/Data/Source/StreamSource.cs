@@ -1,17 +1,23 @@
-﻿namespace Ico.Reader.Data.Source;
+namespace Ico.Reader.Data.Source;
 
 /// <summary>
 /// An <see cref="IDataSource"/> that reads the caller's stream directly, without copying it. The
 /// stream must stay open for as long as images are read from it.
 /// </summary>
+/// <remarks>
+/// The data starts where the stream stood when it was handed over, and reading images moves the stream's position.
+/// </remarks>
 public sealed class StreamSource : IDataSource
 {
     private readonly Stream _sourceStream;
+    private readonly long _startPosition;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StreamSource"/> class.
     /// </summary>
-    /// <param name="sourceStream">The stream to read from. Ownership stays with the caller.</param>
+    /// <param name="sourceStream">
+    /// The stream to read from, positioned where the data starts. Ownership stays with the caller.
+    /// </param>
     /// <exception cref="ArgumentNullException">The stream is null.</exception>
     /// <exception cref="ArgumentException">The stream is not readable or not seekable.</exception>
     public StreamSource(Stream sourceStream)
@@ -26,11 +32,12 @@ public sealed class StreamSource : IDataSource
             throw new ArgumentException("The source stream must be seekable.", nameof(sourceStream));
 
         _sourceStream = sourceStream;
+        _startPosition = sourceStream.Position;
     }
 
     /// <summary>
-    /// Returns the caller's stream behind a wrapper, so that consumers disposing what they get back
-    /// do not close a stream this source does not own.
+    /// Returns a view of the caller's stream that starts where the data does, so that consumers disposing what they get
+    /// back do not close a stream this source does not own.
     /// </summary>
     /// <returns>A stream over the ico data.</returns>
     /// <exception cref="ObjectDisposedException">Thrown if the caller has closed the source stream.</exception>
@@ -45,7 +52,6 @@ public sealed class StreamSource : IDataSource
                 "The source stream has been closed. A stream read with copyStream set to false must stay open until every image has been read.");
         }
 
-        return new NonDisposingStream(_sourceStream);
+        return new StreamWindow(_sourceStream, _startPosition);
     }
 }
-

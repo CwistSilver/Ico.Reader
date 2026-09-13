@@ -36,6 +36,69 @@ public sealed class ReadSourceTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Read_StartsAtTheCurrentPositionOfTheStream(bool copyStream)
+    {
+        var bytes = TestFiles.IcoBytes(Fixture);
+        var expected = _reader.Read(bytes)!;
+        using var stream = new MemoryStream([.. new byte[7], .. bytes]) { Position = 7 };
+
+        var ico = _reader.Read(stream, copyStream);
+
+        Assert.NotNull(ico);
+        Assert.Equal(expected.ImageReferences.Count, ico.ImageReferences.Count);
+        Assert.Equal(expected.GetImage(0), ico.GetImage(0));
+    }
+
+    [Fact]
+    public async Task ReadAsync_StartsAtTheCurrentPositionOfTheStream()
+    {
+        var bytes = TestFiles.IcoBytes(Fixture);
+        var expected = _reader.Read(bytes)!;
+        using var stream = new MemoryStream([.. new byte[7], .. bytes]) { Position = 7 };
+
+        var ico = await _reader.ReadAsync(stream, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(ico);
+        Assert.Equal(expected.GetImage(0), ico.GetImage(0));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Read_ReturnsNullForAStreamLeftAtItsEnd(bool copyStream)
+    {
+        using var stream = new MemoryStream();
+        stream.Write(TestFiles.IcoBytes(Fixture), 0, TestFiles.IcoBytes(Fixture).Length);
+
+        Assert.Null(_reader.Read(stream, copyStream));
+    }
+
+    [Fact]
+    public void Read_CopiesAStreamThatCannotSeek()
+    {
+        var bytes = TestFiles.IcoBytes(Fixture);
+        using var stream = new UnseekableStream(bytes);
+
+        var ico = _reader.Read(stream, copyStream: true);
+
+        Assert.NotNull(ico);
+        Assert.Equal(_reader.Read(bytes)!.GetImage(0), ico.GetImage(0));
+    }
+
+    private sealed class UnseekableStream(byte[] data) : MemoryStream(data)
+    {
+        public override bool CanSeek => false;
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+    }
+
     [Fact]
     public void Read_OnlyNamesTheResultWhenReadingFromAPath()
     {

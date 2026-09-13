@@ -56,8 +56,10 @@ using (var streamOrigin = File.OpenRead("path/to/your/icon.ico"))
 }
 ```
 
-- `copyStream: true` → The stream is **copied**, allowing access to images even after the original stream is closed.
-- `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must remain open while accessing images. Accessing an image after it closes throws `ObjectDisposedException`.
+- `copyStream: true` → The stream is **copied**, allowing access to images even after the original stream is closed. The stream does not have to be seekable.
+- `copyStream: false` → The stream is **used directly**, making it as **memory-efficient as reading from a file**, but the stream must be seekable and remain open while accessing images, and reading images moves its position. Accessing an image after it closes throws `ObjectDisposedException`.
+
+Every stream overload, `ReadAsync` included, reads from the stream's **current position**. A stream you have just written the data into stands at its end, so set `Position = 0` before reading it.
 
 ### Thread Safety
 
