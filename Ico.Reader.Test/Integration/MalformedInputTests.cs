@@ -51,17 +51,44 @@ public sealed class MalformedInputTests
     }
 
     [Fact]
-    public void Read_ReturnsNullWhenADirectoryEntryReservesANonZeroByte()
+    public void Read_IgnoresTheReservedByteOfADirectoryEntry()
     {
+        // Windows loads such a file, so the byte is not a reason to reject it.
         var ico = IcoBuilder.Icon()
-            .AddIcon(16, 16, 32, IcoBmpImage.TrueColor32(new (Rgb Color, byte Alpha)[16, 16]), reserved: 1)
+            .AddIcon(16, 16, 32, IcoBmpImage.TrueColor32(new (Rgb Color, byte Alpha)[16, 16]), reserved: 255)
             .Build();
 
-        Assert.Null(_reader.Read(ico));
+        var result = _reader.Read(ico);
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.GetImage(Assert.Single(result.ImageReferences)));
     }
 
     [Fact]
-    public void Read_ReturnsNullForAnEntryInAnUnknownImageFormat()
+    public void Read_SkipsAnEntryInAnUnknownImageFormatAndKeepsTheOthers()
+    {
+        // Windows still loads the other images of such a file, as Ico.Reader already did for EXE and DLL files.
+        var garbage = new byte[64];
+        garbage[0] = 0xFF;
+        var ico = IcoBuilder.Icon()
+            .AddIcon(16, 16, 32, garbage)
+            .AddIcon(32, 32, 32, IcoBmpImage.TrueColor32(new (Rgb Color, byte Alpha)[32, 32]))
+            .Build();
+
+        var result = _reader.Read(ico);
+
+        Assert.NotNull(result);
+        var reference = Assert.Single(result.ImageReferences);
+        Assert.Equal(1, reference.Id);
+        Assert.Equal(32, reference.Width);
+
+        var group = Assert.Single(result.Groups);
+        Assert.Equal(1, group.Size);
+        Assert.Equal(32, PngImage.Parse(result.GetImage(group, 0)).Width);
+    }
+
+    [Fact]
+    public void Read_ReturnsNullWhenNoEntryHoldsAReadableImage()
     {
         var garbage = new byte[64];
         garbage[0] = 0xFF;

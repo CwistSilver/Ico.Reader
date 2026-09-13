@@ -196,24 +196,28 @@ public sealed class IcoReader
 
         var directoryEntries = DirectoryEntryParser.ReadFileEntries(stream, header);
         var references = new List<ImageReference>(directoryEntries.Length);
+        var readableEntries = new List<IIcoDirectoryEntry>(directoryEntries.Length);
 
+        // Like Windows, an image no decoder recognises costs only that image, and the reserved byte of
+        // an entry is not checked.
         for (var i = 0; i < directoryEntries.Length; i++)
         {
-            if (directoryEntries[i] is IconDirectoryEntry { Reserved: not 0 })
-                return null;
-
             var imageReference = ImageReferenceReader.FromDirectoryEntry(stream, directoryEntries[i], _icoReaderConfiguration.IcoDecoder);
             if (imageReference is null)
-                return null;
+                continue;
 
             references.Add(imageReference with { Id = i });
+            readableEntries.Add(directoryEntries[i]);
         }
+
+        if (directoryEntries.Length > 0 && references.Count == 0)
+            return null;
 
         var decodedIcoResult = new DecodedIcoResult
         {
             OriginFileType = originFileType.Value,
             References = references,
-            IcoGroups = [CreateGroup(header, directoryEntries)]
+            IcoGroups = [CreateGroup(header, readableEntries)]
         };
 
         return new IcoData(_icoReaderConfiguration.IcoDecoder, dataSource, decodedIcoResult);
@@ -223,7 +227,7 @@ public sealed class IcoReader
     /// A standalone ICO or CUR file has no grouping of its own, so every image is placed in a single
     /// group named "1" to match how groups are exposed for EXE and DLL sources.
     /// </summary>
-    private static IIcoGroup CreateGroup(IcoHeader header, IIcoDirectoryEntry[] directoryEntries)
+    private static IIcoGroup CreateGroup(IcoHeader header, IEnumerable<IIcoDirectoryEntry> directoryEntries)
         => header.ImageType == IconDirectoryEntry.ImageType
             ? new IconGroup { Name = DefaultGroupName, Header = header, DirectoryEntries = [.. directoryEntries.Cast<IconDirectoryEntry>()] }
             : new CursorGroup { Name = DefaultGroupName, Header = header, DirectoryEntries = [.. directoryEntries.Cast<CursorDirectoryEntry>()] };
