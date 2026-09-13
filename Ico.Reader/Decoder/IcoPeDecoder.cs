@@ -11,6 +11,9 @@ namespace Ico.Reader.Decoder;
 /// <inheritdoc cref="IIcoPeDecoder"/>
 internal sealed class IcoPeDecoder : IIcoPeDecoder
 {
+    /// <summary>An RT_CURSOR resource opens with its hotspot, two words ahead of the image.</summary>
+    private const uint CursorHotspotSize = 4;
+
     private readonly IPeDecoder _peDecoder;
 
     public IcoPeDecoder(IPeDecoder peDecoder)
@@ -124,12 +127,12 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
         // The resource count comes from the file, so allocating per iteration would let a crafted
         // input exhaust the stack.
-        Span<byte> hotspotData = stackalloc byte[4];
+        Span<byte> hotspotData = stackalloc byte[(int)CursorHotspotSize];
 
         for (var i = 0; i < curResource.Length; i++)
         {
             var curDataEntry = curResource[i];
-            if (!curDataEntry.TryGetFileOffset(sections, out var fileOffset))
+            if (curDataEntry.Size <= CursorHotspotSize || !curDataEntry.TryGetFileOffset(sections, out var fileOffset))
                 continue;
 
             stream.Position = fileOffset;
@@ -137,9 +140,8 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
 
             var hotspotX = MemoryMarshal.Read<ushort>(hotspotData.Slice(0, 2));
             var hotspotY = MemoryMarshal.Read<ushort>(hotspotData.Slice(2, 2));
-            var imageReferenceOffset = fileOffset + 4;
 
-            var reference = ImageReferenceReader.FromStream(stream, imageReferenceOffset, curDataEntry.Size, icoDecoder);
+            var reference = ImageReferenceReader.FromStream(stream, fileOffset + CursorHotspotSize, curDataEntry.Size - CursorHotspotSize, icoDecoder);
             if (reference is null)
                 continue;
 

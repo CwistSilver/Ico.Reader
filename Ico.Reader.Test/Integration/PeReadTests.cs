@@ -1,4 +1,6 @@
-﻿namespace Ico.Reader.Test.Integration;
+﻿using Ico.Reader.PeDecoder.Models;
+
+namespace Ico.Reader.Test.Integration;
 
 /// <summary>
 /// Reads icons and cursors back out of a real PE file. The fixture assembly embeds four
@@ -7,6 +9,8 @@
 /// </summary>
 public sealed class PeReadTests
 {
+    private const uint CursorHotspotSize = 4;
+
     private readonly IcoReader _reader = new();
 
     private IcoData Read()
@@ -98,6 +102,52 @@ public sealed class PeReadTests
 
         var multi = ico.GetImageReferences("2", IcoType.Cursor).OrderBy(x => x.Width).ToArray();
         Assert.Equal([(4, 6), (8, 12), (12, 18)], multi.Select(x => ((int)x.HotspotX, (int)x.HotspotY)));
+    }
+
+    [Fact]
+    public void Read_ReportsCursorImageSizesWithoutTheHotspotPrefix()
+    {
+        var pe = File.ReadAllBytes(TestFiles.PeFixture);
+        var ico = _reader.Read(pe);
+        Assert.NotNull(ico);
+
+        Assert.All(PeResources.LeavesOf(pe, ResourceType.RT_CURSOR), leaf =>
+        {
+            var reference = ico.ImageReferences.Single(x => x.Offset == PeResources.DataOffset(pe, leaf) + CursorHotspotSize);
+            Assert.Equal(leaf.Size - CursorHotspotSize, reference.Size);
+        });
+    }
+
+    [Fact]
+    public void GetImage_ReturnsExactlyThePngStoredInACursorResource()
+    {
+        // Point the first cursor at the four bytes before the fixture's PNG icon, so it holds a hotspot
+        // followed by that PNG.
+        var pe = File.ReadAllBytes(TestFiles.PeFixture);
+        var pngIcon = PeResources.LeavesOf(pe, ResourceType.RT_ICON).Single(x => pe[PeResources.DataOffset(pe, x)] == 0x89);
+        var png = pe.AsSpan(PeResources.DataOffset(pe, pngIcon), (int)pngIcon.Size).ToArray();
+        var cursor = PeResources.LeavesOf(pe, ResourceType.RT_CURSOR).First();
+        PeResources.WriteUInt32(pe, cursor.DataEntryOffset, pngIcon.DataRva - CursorHotspotSize);
+        PeResources.WriteUInt32(pe, cursor.DataEntryOffset + 4, pngIcon.Size + CursorHotspotSize);
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        var pngCursor = ico.ImageReferences.Single(x => x.IcoType == IcoType.Cursor && x.Format == IcoImageFormat.Png);
+        Assert.Equal(png, ico.GetImage(pngCursor));
+    }
+
+    [Fact]
+    public void Read_SkipsACursorResourceTooShortToHoldAnImage()
+    {
+        var pe = File.ReadAllBytes(TestFiles.PeFixture);
+        var cursor = PeResources.LeavesOf(pe, ResourceType.RT_CURSOR).First();
+        PeResources.WriteUInt32(pe, cursor.DataEntryOffset + 4, CursorHotspotSize);
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        Assert.Equal(4, ico.ImageReferences.Count(x => x.IcoType == IcoType.Cursor));
     }
 
     [Fact]
