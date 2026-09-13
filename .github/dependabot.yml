@@ -18,10 +18,10 @@ updates:
       interval: weekly
     commit-message:
       prefix: deps
+    ignore:
+      - dependency-name: Microsoft.Extensions.DependencyInjection
+      - dependency-name: Microsoft.Extensions.DependencyInjection.Abstractions
     groups:
-      microsoft-extensions:
-        patterns:
-          - Microsoft.Extensions.*
       xunit:
         patterns:
           - xunit
