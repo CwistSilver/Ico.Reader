@@ -127,6 +127,50 @@ public sealed class PeGroupResolutionTests
     }
 
     [Fact]
+    public void Read_ResolvesCursorGroupsToCursorsWhenIconsShareTheirIds()
+    {
+        // Resource ids only have to be unique within their type. rc.exe numbers icons and cursors from
+        // one counter, but the resource compiler behind tk86.dll numbers both from 1.
+        var baseline = _reader.Read(PeFixtureBytes())!;
+        var pe = PeFixtureBytes();
+        var newIds = PeResources.LeavesOf(pe, ResourceType.RT_CURSOR)
+            .OrderBy(x => x.Id)
+            .Select((leaf, index) => (leaf, NewId: (ushort)(index + 1)))
+            .ToArray();
+
+        foreach (var (leaf, newId) in newIds)
+            PeResources.WriteUInt32(pe, leaf.IdEntryOffset, newId);
+
+        var newIdFor = newIds.ToDictionary(x => (ushort)x.leaf.Id, x => x.NewId);
+        foreach (var group in PeResources.LeavesOf(pe, ResourceType.RT_GROUP_CURSOR))
+        {
+            var ids = PeResources.GroupResourceIds(pe, group);
+            for (var i = 0; i < ids.Count; i++)
+                PeResources.WriteUInt16(pe, PeResources.GroupEntryResourceIdOffset(pe, group, i), newIdFor[ids[i]]);
+        }
+
+        Assert.Subset(
+            PeResources.LeavesOf(pe, ResourceType.RT_ICON).Select(x => x.Id).ToHashSet(),
+            newIds.Select(x => (uint)x.NewId).ToHashSet());
+
+        var ico = _reader.Read(pe);
+
+        Assert.NotNull(ico);
+        foreach (var expected in baseline.CursorGroups)
+        {
+            var actual = ico.GetCursorGroup(expected.Name);
+
+            Assert.All(Enumerable.Range(0, actual.Size), i => Assert.Equal(IcoType.Cursor, ico.GetImageReference(actual, i).IcoType));
+            Assert.Equal(
+                expected.DirectoryEntries.Select(x => (x.Width, x.HotspotX, x.HotspotY)),
+                actual.DirectoryEntries.Select(x => (x.Width, x.HotspotX, x.HotspotY)));
+            Assert.Equal(
+                Enumerable.Range(0, expected.Size).Select(i => baseline.GetImage(expected, i)),
+                Enumerable.Range(0, actual.Size).Select(i => ico.GetImage(actual, i)));
+        }
+    }
+
+    [Fact]
     public void Read_KeepsEveryOtherIconWhenOneIsInAnUnrecognisedFormat()
     {
         // An image no decoder recognises is skipped. It used to end the image loop, which also

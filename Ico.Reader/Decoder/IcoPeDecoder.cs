@@ -52,6 +52,9 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         var sections = readResourceDirectory.Sections;
         decodedIcoResult.References.Capacity = icoResource.Length;
 
+        // Resource ids are only unique within their type, so group entries resolve against icons alone.
+        var iconsById = new Dictionary<int, ImageReference>(icoResource.Length);
+
         for (var i = 0; i < icoResource.Length; i++)
         {
             var icoDataEntry = icoResource[i];
@@ -62,7 +65,9 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 continue;
 
-            decodedIcoResult.References.Add(reference with { Id = (int)icoDataEntry.ID });
+            var icon = reference with { Id = (int)icoDataEntry.ID };
+            decodedIcoResult.References.Add(icon);
+            iconsById.TryAdd(icon.Id, icon);
         }
 
         var groupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_ICON.ToString());
@@ -88,8 +93,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             var directoryEntries = new List<IconDirectoryEntry>(parsedEntries.Length);
             foreach (var entry in parsedEntries)
             {
-                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == entry.ImageOffset);
-                if (reference is null)
+                if (!iconsById.TryGetValue((int)entry.ImageOffset, out var reference))
                     continue;
 
                 directoryEntries.Add(entry with { RealImageOffset = reference.Offset });
@@ -116,6 +120,8 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
         var sections = readResourceDirectory.Sections;
         decodedIcoResult.References.Capacity += curResource.Length;
 
+        var cursorsById = new Dictionary<int, ImageReference>(curResource.Length);
+
         // The resource count comes from the file, so allocating per iteration would let a crafted
         // input exhaust the stack.
         Span<byte> hotspotData = stackalloc byte[4];
@@ -137,7 +143,9 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             if (reference is null)
                 continue;
 
-            decodedIcoResult.References.Add(reference with { Id = (int)curDataEntry.ID, IcoType = IcoType.Cursor, HotspotX = hotspotX, HotspotY = hotspotY });
+            var cursor = reference with { Id = (int)curDataEntry.ID, IcoType = IcoType.Cursor, HotspotX = hotspotX, HotspotY = hotspotY };
+            decodedIcoResult.References.Add(cursor);
+            cursorsById.TryAdd(cursor.Id, cursor);
         }
 
         var groupDirectory = readResourceDirectory.GetDirectory(ResourceType.RT_GROUP_CURSOR.ToString());
@@ -161,8 +169,7 @@ internal sealed class IcoPeDecoder : IIcoPeDecoder
             var directoryEntries = new List<CursorDirectoryEntry>(parsedEntries.Length);
             foreach (var entry in parsedEntries)
             {
-                var reference = decodedIcoResult.References.FirstOrDefault(r => r.Id == entry.ImageOffset);
-                if (reference is null)
+                if (!cursorsById.TryGetValue((int)entry.ImageOffset, out var reference))
                     continue;
 
                 directoryEntries.Add(entry with { RealImageOffset = reference.Offset, HotspotX = reference.HotspotX, HotspotY = reference.HotspotY });
