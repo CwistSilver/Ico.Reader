@@ -166,6 +166,55 @@ public sealed class SaveTests : IDisposable
             _ = PngImage.Parse(await AsyncFile.ReadAllBytesAsync(file, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>
+    /// A group in an EXE or DLL can be named by any string the file carries, including path separators and characters
+    /// no file system accepts.
+    /// </summary>
+    [Theory]
+    [InlineData(@"x\..\..\..\..\escaped")]
+    [InlineData("x/../../../../escaped")]
+    [InlineData("A:B?")]
+    public async Task SaveAllGroupsToDirectory_KeepsEveryFileInsideTheTarget(string groupName)
+    {
+        var source = TestFiles.IcoBytes("icon_multi.ico");
+        var read = _reader.Read(source);
+        Assert.NotNull(read);
+        var group = Assert.IsType<IconGroup>(Assert.Single(read.Groups));
+        var ico = new IcoData(new Decoder.IcoDecoder(), new Data.Source.MemorySource(source), new DecodedIcoResult
+        {
+            OriginFileType = read.OriginFileType,
+            References = [.. read.ImageReferences],
+            IcoGroups = [new IconGroup { Name = groupName, Header = group.Header, DirectoryEntries = group.DirectoryEntries }]
+        })
+        { Name = "renamed" };
+        var target = Path.Combine(_outputDirectory, "a", "b");
+
+        await _exporter.SaveAllGroupsToDirectoryAsync(ico, target, TestContext.Current.CancellationToken);
+
+        AssertWrittenInside(target, expectedFiles: 3);
+    }
+
+    [Theory]
+    [InlineData("..")]
+    [InlineData(@"..\..")]
+    public async Task SaveAllImagesToDirectory_KeepsEveryFileInsideTheTargetWhateverTheSourceIsNamed(string name)
+    {
+        var ico = Read();
+        ico.Name = name;
+        var target = Path.Combine(_outputDirectory, "a", "b");
+
+        await _exporter.SaveAllImagesToDirectoryAsync(ico, target, TestContext.Current.CancellationToken);
+
+        AssertWrittenInside(target, expectedFiles: 3);
+    }
+
+    private void AssertWrittenInside(string target, int expectedFiles)
+    {
+        var written = Directory.GetFiles(_outputDirectory, "*.png", SearchOption.AllDirectories);
+        Assert.Equal(expectedFiles, written.Length);
+        Assert.All(written, file => Assert.StartsWith(Path.GetFullPath(target) + Path.DirectorySeparatorChar, Path.GetFullPath(file), StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task SavedImagesAreValidPngFiles()
     {
