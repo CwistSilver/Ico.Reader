@@ -93,6 +93,29 @@ public sealed class PeLayoutToleranceTests
         Assert.Equal(baseline.CursorGroups.Select(Describe), ico.CursorGroups.Select(Describe));
     }
 
+    /// <summary>
+    /// The offsets inside a resource tree count from its root. Only when the tree starts its section, as it usually
+    /// does, do they coincide with offsets from the section start.
+    /// </summary>
+    [Fact]
+    public void Read_ResolvesTheResourceTreeFromItsRootWhenTheTreeDoesNotStartItsSection()
+    {
+        const int Lead = 16;
+        var expected = _reader.Read(PeFixtureBytes())!;
+        var pe = PeFixtureBytes();
+        var section = PeResources.SectionOf(pe, BitConverter.ToUInt32(pe, PeResources.ResourceTableOffset(pe)));
+        PeResources.WriteUInt32(pe, section.HeaderOffset + 8, section.VirtualSize + Lead);
+        PeResources.WriteUInt32(pe, section.HeaderOffset + 12, section.VirtualAddress - Lead);
+        PeResources.WriteUInt32(pe, section.HeaderOffset + 16, section.SizeOfRawData + Lead);
+        PeResources.WriteUInt32(pe, section.HeaderOffset + 20, section.PointerToRawData - Lead);
+
+        var actual = _reader.Read(pe);
+
+        Assert.NotNull(actual);
+        Assert.Equal(expected.Groups.Select(Describe), actual.Groups.Select(Describe));
+        Assert.Equal(expected.ImageReferences.Select(expected.GetImage), actual.ImageReferences.Select(actual.GetImage));
+    }
+
     [Fact]
     public void Read_ReturnsNullForAnMzFileThatIsNotAPe() => Assert.Null(_reader.Read(NeExecutable()));
 

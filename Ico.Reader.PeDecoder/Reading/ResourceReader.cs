@@ -25,42 +25,45 @@ internal static class ResourceReader
         var sectionHeaders = SectionHeaderReader.Read(stream, peHeader);
 
         var rsrcSection = resourceTable.FindFileSectionHeader(sectionHeaders);
-        long resourceTableOffset = rsrcSection.GetFileOffset(resourceTable.VirtualAddress);
+        long rootOffset = rsrcSection.GetFileOffset(resourceTable.VirtualAddress);
 
-        var rootResourceDirectory = ReadResourceDirectory(stream, resourceTableOffset, rsrcSection, [], 1);
+        var rootResourceDirectory = ReadResourceDirectory(stream, rootOffset, rootOffset, [], 1);
 
         return rootResourceDirectory with { Name = ResourceDirectory.RootName, Section = rsrcSection };
     }
 
-    private static ResourceDirectory ReadResourceDirectory(Stream stream, long virtualAddress, SectionHeader rsrcSection, HashSet<long> visited, int level)
+    /// <summary>
+    /// Reads the directory at <paramref name="directoryOffset"/> and everything below it. Every offset stored in the
+    /// tree counts from its root, which is the start of the section only when the tree comes first in it.
+    /// </summary>
+    private static ResourceDirectory ReadResourceDirectory(Stream stream, long rootOffset, long directoryOffset, HashSet<long> visited, int level)
     {
-        stream.Position = virtualAddress;
+        stream.Position = directoryOffset;
 
-        var resourceDirectory = ReadResourceDirectoryBase(stream, virtualAddress, level);
-        if (level >= ResourceDirectory.MaxDepth || !visited.Add(virtualAddress))
+        var resourceDirectory = ReadResourceDirectoryBase(stream, level);
+        if (level >= ResourceDirectory.MaxDepth || !visited.Add(directoryOffset))
             return resourceDirectory;
 
         var subdirectories = new List<ResourceDirectory>();
         var dataEntries = new List<ResourceDataEntry>();
 
-        foreach (var entry in ReadDirectoryEntries(stream, resourceDirectory, virtualAddress))
+        foreach (var entry in ReadDirectoryEntries(stream, resourceDirectory, directoryOffset))
         {
             if (entry.SubdirectoryOffset == 0)
             {
-                dataEntries.Add(ReadDataEntry(stream, rsrcSection.PointerToRawData, entry.DataEntryOffset));
+                dataEntries.Add(ReadDataEntry(stream, rootOffset + entry.DataEntryOffset));
                 continue;
             }
 
-            var childAddress = rsrcSection.PointerToRawData + entry.SubdirectoryOffset;
-            var child = ReadResourceDirectory(stream, childAddress, rsrcSection, visited, level + 1);
+            var child = ReadResourceDirectory(stream, rootOffset, rootOffset + entry.SubdirectoryOffset, visited, level + 1);
 
-            subdirectories.Add(NameFromParentEntry(child, entry, stream, rsrcSection));
+            subdirectories.Add(NameFromParentEntry(child, entry, stream, rootOffset));
         }
 
         return resourceDirectory with { Subdirectories = subdirectories, DataEntries = dataEntries };
     }
 
-    private static ResourceDirectory ReadResourceDirectoryBase(Stream stream, long virtualAddress, int level)
+    private static ResourceDirectory ReadResourceDirectoryBase(Stream stream, int level)
     {
         Span<byte> resourceDirectoryBytes = stackalloc byte[16];
         stream.ReadExactly(resourceDirectoryBytes);
@@ -86,10 +89,10 @@ internal static class ResourceReader
     /// resource type at the second level, or an id below that. At the id level that id also names
     /// the resource itself, so it is stamped onto the data entries.
     /// </summary>
-    private static ResourceDirectory NameFromParentEntry(ResourceDirectory directory, ResourceDirectoryEntry entry, Stream stream, SectionHeader rsrcSection)
+    private static ResourceDirectory NameFromParentEntry(ResourceDirectory directory, ResourceDirectoryEntry entry, Stream stream, long rootOffset)
     {
         if (entry.NameOffset != 0)
-            return directory with { Name = DecodeName(entry, stream, rsrcSection.PointerToRawData) };
+            return directory with { Name = DecodeName(entry, stream, rootOffset) };
 
         if (directory.Level == ResourceTypeLevel)
             return directory with { Name = ((ResourceType)entry.IntegerID).ToString() };
@@ -101,9 +104,9 @@ internal static class ResourceReader
         };
     }
 
-    private static string DecodeName(ResourceDirectoryEntry entry, Stream resourceStream, long streamOffset)
+    private static string DecodeName(ResourceDirectoryEntry entry, Stream resourceStream, long rootOffset)
     {
-        resourceStream.Position = streamOffset + entry.NameOffset;
+        resourceStream.Position = rootOffset + entry.NameOffset;
 
         Span<byte> lengthBytes = stackalloc byte[2];
         resourceStream.ReadExactly(lengthBytes);
@@ -155,9 +158,9 @@ internal static class ResourceReader
         };
     }
 
-    private static ResourceDataEntry ReadDataEntry(Stream stream, long baseOffset, uint dataEntryOffset)
+    private static ResourceDataEntry ReadDataEntry(Stream stream, long dataEntryOffset)
     {
-        stream.Position = baseOffset + dataEntryOffset;
+        stream.Position = dataEntryOffset;
 
         Span<byte> data = stackalloc byte[16];
         stream.ReadExactly(data);
